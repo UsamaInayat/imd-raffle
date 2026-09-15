@@ -25,7 +25,11 @@ export function VerifyPanel() {
   const params = useSearchParams();
   const raffleId = Number(params.get("id") ?? "0");
 
-  const { data: raffle, isLoading: raffleLoading } = useContractRead<RaffleTuple>({
+  const {
+    data: raffle,
+    isLoading: raffleLoading,
+    error: raffleError,
+  } = useContractRead<RaffleTuple>({
     abi: RAFFLE_ABI,
     functionName: "getRaffle",
     args: [BigInt(raffleId)],
@@ -61,10 +65,30 @@ export function VerifyPanel() {
     );
   }
 
-  if (raffleLoading || !raffle) {
+  if (raffleLoading) {
     return (
       <div className="imd-box p-6 font-mono text-sm opacity-60">
         loading raffle #{raffleId}…
+      </div>
+    );
+  }
+
+  if (raffleError || !raffle) {
+    return (
+      <div className="imd-box p-6 font-mono text-sm">
+        <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
+          NOT FOUND
+        </p>
+        <p className="mt-3">
+          raffle #{raffleId} does not exist on-chain yet.
+        </p>
+        <p className="mt-2 text-neutral-600">
+          create one from <a href="/admin" className="underline">/admin</a>, then
+          verify with <code>?id=0</code> (first raffle is id 0).
+        </p>
+        {raffleError ? (
+          <p className="mt-3 text-xs text-red-600">{raffleError}</p>
+        ) : null}
       </div>
     );
   }
