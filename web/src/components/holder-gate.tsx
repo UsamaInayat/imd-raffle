@@ -13,6 +13,14 @@ export function HolderGate({ children }: { children: React.ReactNode }) {
     return <div className="imd-box mx-auto max-w-lg p-8 text-center font-mono text-sm">initializing…</div>;
   }
 
+  if (authenticated && isLoading) {
+    return (
+      <div className="imd-box mx-auto max-w-lg p-8 text-center font-mono text-sm">
+        checking IDMD balance…
+      </div>
+    );
+  }
+
   if (!authenticated) {
     return (
       <div className="imd-box mx-auto max-w-lg p-8 text-center">
@@ -27,10 +35,6 @@ export function HolderGate({ children }: { children: React.ReactNode }) {
         </p>
       </div>
     );
-  }
-
-  if (isLoading) {
-    return <div className="imd-box mx-auto max-w-lg p-8 text-center font-mono text-sm">checking IDMD balance…</div>;
   }
 
   if (!isHolder) {

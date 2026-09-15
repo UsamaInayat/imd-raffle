@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
 import { usePrivy } from "@privy-io/react-auth";
 import { StatCard } from "@/components/layout";
@@ -54,6 +54,7 @@ function useRaffleActions(raffleId: number) {
 export function useAllRaffles() {
   const [raffles, setRaffles] = useState<RaffleData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const hasLoadedRef = useRef(false);
 
   const { data: raffleCount } = useContractRead<bigint>({
     abi: RAFFLE_ABI,
@@ -63,13 +64,20 @@ export function useAllRaffles() {
 
   useEffect(() => {
     async function load() {
-      if (!raffleCount || RAFFLE_CONTRACT_ADDRESS.endsWith("0000")) {
+      if (raffleCount === undefined || RAFFLE_CONTRACT_ADDRESS.endsWith("0000")) {
+        return;
+      }
+
+      const count = Number(raffleCount);
+      if (count === 0) {
+        setRaffles([]);
         setIsLoading(false);
         return;
       }
 
-      setIsLoading(true);
-      const count = Number(raffleCount);
+      if (!hasLoadedRef.current) {
+        setIsLoading(true);
+      }
       const loaded: RaffleData[] = [];
 
       for (let id = 0; id < count; id++) {
@@ -114,6 +122,7 @@ export function useAllRaffles() {
       }
 
       setRaffles(loaded.reverse());
+      hasLoadedRef.current = true;
       setIsLoading(false);
     }
 

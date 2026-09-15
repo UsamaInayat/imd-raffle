@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import {
   createWalletClient,
@@ -17,6 +17,26 @@ import {
 } from "@/lib/constants";
 import { publicClient } from "@/lib/viem-client";
 
+const IS_ADMIN_ABI = [
+  {
+    type: "function",
+    name: "isAdmin",
+    inputs: [{ name: "account", type: "address" }],
+    outputs: [{ type: "bool" }],
+    stateMutability: "view",
+  },
+] as const;
+
+const OWNER_ABI = [
+  {
+    type: "function",
+    name: "owner",
+    inputs: [],
+    outputs: [{ type: "address" }],
+    stateMutability: "view",
+  },
+] as const;
+
 function serializeArgs(args?: readonly unknown[]): string {
   if (!args) return "";
   return args
@@ -26,8 +46,12 @@ function serializeArgs(args?: readonly unknown[]): string {
 
 export function useWalletAddress(): Address | undefined {
   const { wallets } = useWallets();
-  const wallet = wallets[0];
-  return wallet?.address as Address | undefined;
+  const address = wallets[0]?.address;
+
+  return useMemo(
+    () => (address ? (address.toLowerCase() as Address) : undefined),
+    [address]
+  );
 }
 
 export function useContractRead<T>({
@@ -46,28 +70,24 @@ export function useContractRead<T>({
   contractAddress?: Address;
 }) {
   const [data, setData] = useState<T | undefined>();
-  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
   const argsKey = serializeArgs(args);
+  const queryKey = `${contractAddress}:${functionName}:${argsKey}:${enabled}`;
   const argsRef = useRef(args);
   const abiRef = useRef(abi);
-  const hasDataRef = useRef(false);
 
   argsRef.current = args;
   abiRef.current = abi;
 
-  const refetch = useCallback(async () => {
+  const fetchData = useCallback(async () => {
     if (
       !enabled ||
       !contractAddress ||
       contractAddress.endsWith("0000")
     ) {
-      setIsLoading(false);
       return;
     }
-    if (!hasDataRef.current) {
-      setIsLoading(true);
-    }
+
     try {
       const result = await publicClient.readContract({
         address: contractAddress,
@@ -76,31 +96,40 @@ export function useContractRead<T>({
         args: argsRef.current,
       });
       setData(result as T);
-      hasDataRef.current = true;
       setError(undefined);
     } catch (err) {
       setError(err instanceof Error ? err.message : "read failed");
-      hasDataRef.current = false;
-    } finally {
-      setIsLoading(false);
     }
-  }, [functionName, argsKey, enabled, contractAddress]);
+  }, [contractAddress, enabled, functionName]);
 
   useEffect(() => {
-    hasDataRef.current = false;
     setData(undefined);
     setError(undefined);
-    setIsLoading(true);
-  }, [functionName, argsKey, contractAddress]);
+  }, [queryKey]);
 
   useEffect(() => {
-    void refetch();
-    if (!refetchInterval) return;
-    const timer = setInterval(() => void refetch(), refetchInterval);
-    return () => clearInterval(timer);
-  }, [refetch, refetchInterval]);
+    if (
+      !enabled ||
+      !contractAddress ||
+      contractAddress.endsWith("0000")
+    ) {
+      return;
+    }
 
-  return { data, isLoading, error, refetch };
+    void fetchData();
+
+    if (!refetchInterval) return;
+    const timer = setInterval(() => void fetchData(), refetchInterval);
+    return () => clearInterval(timer);
+  }, [queryKey, refetchInterval, fetchData, enabled, contractAddress]);
+
+  const isLoading =
+    enabled &&
+    !contractAddress.endsWith("0000") &&
+    data === undefined &&
+    error === undefined;
+
+  return { data, isLoading, error, refetch: fetchData };
 }
 
 export function useContractWrite() {
@@ -161,19 +190,21 @@ export function useContractWrite() {
 
 export function useIsHolder() {
   const address = useWalletAddress();
-  const { authenticated } = usePrivy();
+  const { authenticated, ready } = usePrivy();
+
+  const enabled = Boolean(ready && authenticated && address);
 
   const { data: balance, isLoading, refetch } = useContractRead<bigint>({
     abi: ERC721_ABI,
     functionName: "balanceOf",
     args: address ? [address] : undefined,
-    enabled: Boolean(authenticated && address),
+    enabled,
     contractAddress: IDENTITY_MD_ADDRESS,
   });
 
   return {
     isHolder: balance !== undefined && balance > BigInt(0),
-    isLoading,
+    isLoading: enabled && isLoading,
     balance,
     refetch,
   };
@@ -181,51 +212,39 @@ export function useIsHolder() {
 
 export function useIsAdmin() {
   const address = useWalletAddress();
-  const { authenticated } = usePrivy();
+  const { authenticated, ready } = usePrivy();
+
+  const enabled = Boolean(ready && authenticated && address);
 
   const { data: isAdmin, isLoading, refetch } = useContractRead<boolean>({
-    abi: [
-      {
-        type: "function",
-        name: "isAdmin",
-        inputs: [{ name: "account", type: "address" }],
-        outputs: [{ type: "bool" }],
-        stateMutability: "view",
-      },
-    ],
+    abi: IS_ADMIN_ABI,
     functionName: "isAdmin",
     args: address ? [address] : undefined,
-    enabled: Boolean(authenticated && address),
+    enabled,
   });
 
   return {
     isAdmin: Boolean(isAdmin),
-    isLoading,
+    isLoading: enabled && isLoading,
     refetch,
   };
 }
 
 export function useIsOwner() {
   const address = useWalletAddress();
-  const { authenticated } = usePrivy();
+  const { authenticated, ready } = usePrivy();
+
+  const enabled = Boolean(ready && authenticated && address);
 
   const { data: owner, isLoading } = useContractRead<Address>({
-    abi: [
-      {
-        type: "function",
-        name: "owner",
-        inputs: [],
-        outputs: [{ type: "address" }],
-        stateMutability: "view",
-      },
-    ],
+    abi: OWNER_ABI,
     functionName: "owner",
-    enabled: Boolean(authenticated && address),
+    enabled,
   });
 
   return {
     isOwner: Boolean(owner && address && owner.toLowerCase() === address.toLowerCase()),
     owner,
-    isLoading,
+    isLoading: enabled && isLoading,
   };
 }
