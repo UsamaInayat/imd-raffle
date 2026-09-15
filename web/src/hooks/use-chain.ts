@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import {
   createWalletClient,
@@ -16,6 +16,13 @@ import {
   RAFFLE_CONTRACT_ADDRESS,
 } from "@/lib/constants";
 import { publicClient } from "@/lib/viem-client";
+
+function serializeArgs(args?: readonly unknown[]): string {
+  if (!args) return "";
+  return args
+    .map((value) => (typeof value === "bigint" ? `b:${value}` : String(value)))
+    .join(",");
+}
 
 export function useWalletAddress(): Address | undefined {
   const { wallets } = useWallets();
@@ -41,6 +48,13 @@ export function useContractRead<T>({
   const [data, setData] = useState<T | undefined>();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | undefined>();
+  const argsKey = serializeArgs(args);
+  const argsRef = useRef(args);
+  const abiRef = useRef(abi);
+  const hasDataRef = useRef(false);
+
+  argsRef.current = args;
+  abiRef.current = abi;
 
   const refetch = useCallback(async () => {
     if (
@@ -51,22 +65,33 @@ export function useContractRead<T>({
       setIsLoading(false);
       return;
     }
-    setIsLoading(true);
+    if (!hasDataRef.current) {
+      setIsLoading(true);
+    }
     try {
       const result = await publicClient.readContract({
         address: contractAddress,
-        abi,
+        abi: abiRef.current,
         functionName,
-        args,
+        args: argsRef.current,
       });
       setData(result as T);
+      hasDataRef.current = true;
       setError(undefined);
     } catch (err) {
       setError(err instanceof Error ? err.message : "read failed");
+      hasDataRef.current = false;
     } finally {
       setIsLoading(false);
     }
-  }, [abi, functionName, args, enabled, contractAddress]);
+  }, [functionName, argsKey, enabled, contractAddress]);
+
+  useEffect(() => {
+    hasDataRef.current = false;
+    setData(undefined);
+    setError(undefined);
+    setIsLoading(true);
+  }, [functionName, argsKey, contractAddress]);
 
   useEffect(() => {
     void refetch();
