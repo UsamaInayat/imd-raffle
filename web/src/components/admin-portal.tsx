@@ -14,6 +14,7 @@ import {
   shortAddress,
 } from "@/lib/constants";
 import { useAllRaffles } from "@/components/raffles";
+import { RaffleExportActions, WinnerExportModule } from "@/components/winner-export";
 
 function CreateRaffleForm() {
   const { write, isPending, error, txHash } = useContractWrite();
@@ -129,8 +130,7 @@ function ManageAdmins() {
   );
 }
 
-function AdminRaffleList() {
-  const { raffles, isLoading } = useAllRaffles();
+function AdminRaffleList({ raffles, isLoading }: { raffles: ReturnType<typeof useAllRaffles>["raffles"]; isLoading: boolean }) {
   const { write, isPending, error } = useContractWrite();
 
   if (isLoading) return <div className="imd-box p-6 font-mono text-sm opacity-60">loading…</div>;
@@ -156,6 +156,7 @@ function AdminRaffleList() {
                 <span className="text-neutral-500">VRF pending — Chainlink will callback automatically</span>
               ) : null}
             </div>
+            <RaffleExportActions raffle={raffle} />
           </div>
         ))}
       </div>
@@ -165,13 +166,18 @@ function AdminRaffleList() {
 }
 
 export function AdminPortal() {
+  const { raffles, isLoading } = useAllRaffles();
+
   return (
-    <div className="grid gap-6 lg:grid-cols-2">
-      <div className="space-y-6">
-        <CreateRaffleForm />
-        <ManageAdmins />
+    <div className="space-y-6">
+      <div className="grid gap-6 lg:grid-cols-2">
+        <div className="space-y-6">
+          <CreateRaffleForm />
+          <ManageAdmins />
+        </div>
+        <AdminRaffleList raffles={raffles} isLoading={isLoading} />
       </div>
-      <AdminRaffleList />
+      <WinnerExportModule raffles={raffles} />
     </div>
   );
 }

@@ -62,7 +62,7 @@ npm run dev
 | `/` | Public | Landing + stats |
 | `/raffles` | IDMD holders | Enter raffles (signed tx) |
 | `/verify?id=N` | Public | Verify draw proof |
-| `/admin` | IDMD + admin | Create raffles, manage admins |
+| `/admin` | IDMD + admin | Create raffles, manage admins, **export winners CSV** |
 | `/api/health` | Public | Railway healthcheck |
 
 ## Admin workflow
@@ -73,6 +73,7 @@ npm run dev
 4. Holders enter (signed tx, gas required)
 5. After end: `requestDraw()` → Chainlink VRF callback auto-finalizes
 6. Verify on `/verify` + [vrf.chain.link](https://vrf.chain.link)
+7. Export winners from `/admin` → **Winners Export** (CSV per raffle or all closed)
 
 ## Docs
 
