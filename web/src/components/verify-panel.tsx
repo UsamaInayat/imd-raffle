@@ -116,7 +116,7 @@ export function VerifyPanel() {
           <div>
             <dt className="text-neutral-500">VRF REQUEST ID</dt>
             <dd>
-              {vrfRequestId > 0n ? (
+              {vrfRequestId > BigInt(0) ? (
                 <a
                   href={`https://vrf.chain.link/mainnet/${vrfRequestId.toString()}`}
                   target="_blank"

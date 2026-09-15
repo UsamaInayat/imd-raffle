@@ -120,7 +120,7 @@ export function useAllRaffles() {
     void load();
   }, [raffleCount]);
 
-  return { raffles, isLoading, total: Number(raffleCount ?? 0n) };
+  return { raffles, isLoading, total: Number(raffleCount ?? BigInt(0)) };
 }
 
 export function useRaffleStats() {
@@ -227,7 +227,7 @@ function RaffleCard({ raffle, now }: { raffle: RaffleData; now: number }) {
 
         {raffle.status === RaffleStatus.Open &&
         Number(raffle.endsAt) <= now &&
-        raffle.entryCount > 0n ? (
+        raffle.entryCount > BigInt(0) ? (
           <button
             type="button"
             className="imd-btn imd-btn-sm"

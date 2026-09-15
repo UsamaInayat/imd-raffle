@@ -147,7 +147,7 @@ export function useIsHolder() {
   });
 
   return {
-    isHolder: balance !== undefined && balance > 0n,
+    isHolder: balance !== undefined && balance > BigInt(0),
     isLoading,
     balance,
     refetch,
