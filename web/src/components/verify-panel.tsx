@@ -75,7 +75,7 @@ export function VerifyPanel() {
     winnerCount,
     endsAt,
     status,
-    drawRequestedAt,
+    vrfRequestId,
     randomSeed,
   ] = raffle;
 
@@ -114,11 +114,24 @@ export function VerifyPanel() {
             <dd>{endsAt.toString()}</dd>
           </div>
           <div>
-            <dt className="text-neutral-500">DRAW BLOCK</dt>
-            <dd>{drawRequestedAt.toString()}</dd>
+            <dt className="text-neutral-500">VRF REQUEST ID</dt>
+            <dd>
+              {vrfRequestId > 0n ? (
+                <a
+                  href={`https://vrf.chain.link/mainnet/${vrfRequestId.toString()}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="underline"
+                >
+                  {vrfRequestId.toString()}
+                </a>
+              ) : (
+                "—"
+              )}
+            </dd>
           </div>
           <div>
-            <dt className="text-neutral-500">RANDOM SEED</dt>
+            <dt className="text-neutral-500">VRF RANDOM WORD</dt>
             <dd className="break-all">{randomSeed.toString()}</dd>
           </div>
         </dl>
@@ -172,8 +185,8 @@ export function VerifyPanel() {
 
           <p className="mt-4 font-mono text-sm leading-relaxed text-neutral-600">
             anyone can replay <code>pickWinners(seed, eligibleEntries, winnerCount)</code>{" "}
-            using the stored random seed and eligible entry snapshot. wallets that sold
-            IDMD before finalize were excluded.
+            using the Chainlink VRF random word and eligible entry snapshot. wallets that sold
+            IDMD before the VRF callback were excluded.
           </p>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -200,12 +213,12 @@ export function VerifyPanel() {
           </div>
 
           <div className="mt-6 font-mono text-xs text-neutral-500">
-            <p className="font-semibold text-black">How randomness works</p>
+            <p className="font-semibold text-black">Chainlink VRF flow</p>
             <ol className="mt-2 list-decimal space-y-1 pl-4">
               <li>After the raffle ends, anyone calls requestDraw().</li>
-              <li>Wait 5 blocks (DRAW_DELAY_BLOCKS).</li>
-              <li>finalizeDraw() filters to wallets still holding IDMD, then draws.</li>
-              <li>Winners picked via public pickWinners() — replay off-chain anytime.</li>
+              <li>Contract requests random words from Chainlink VRF v2.5.</li>
+              <li>Chainlink callback delivers randomWord → filters eligible holders → pickWinners().</li>
+              <li>Verify proof at vrf.chain.link + replay pickWinners() off-chain.</li>
             </ol>
           </div>
         </div>

@@ -149,13 +149,11 @@ function AdminRaffleList() {
             <div className="mt-3 flex flex-wrap gap-2">
               {raffle.status === RaffleStatus.Open && Number(raffle.endsAt) <= Math.floor(Date.now() / 1000) ? (
                 <button type="button" className="imd-btn imd-btn-sm" disabled={isPending} onClick={() => write({ abi: RAFFLE_ABI, functionName: "requestDraw", args: [BigInt(raffle.id)] })}>
-                  REQUEST DRAW
+                  REQUEST VRF DRAW
                 </button>
               ) : null}
               {raffle.status === RaffleStatus.DrawRequested ? (
-                <button type="button" className="imd-btn imd-btn-sm" disabled={isPending} onClick={() => write({ abi: RAFFLE_ABI, functionName: "finalizeDraw", args: [BigInt(raffle.id)] })}>
-                  FINALIZE DRAW
-                </button>
+                <span className="text-neutral-500">VRF pending — Chainlink will callback automatically</span>
               ) : null}
             </div>
           </div>

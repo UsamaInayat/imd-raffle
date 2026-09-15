@@ -2,16 +2,13 @@
 pragma solidity ^0.8.26;
 
 import {IERC721} from "@openzeppelin/contracts/token/ERC721/IERC721.sol";
-import {Ownable} from "@openzeppelin/contracts/access/Ownable.sol";
 import {ReentrancyGuard} from "@openzeppelin/contracts/utils/ReentrancyGuard.sol";
+import {VRFConsumerBaseV2Plus} from "@chainlink/contracts/src/v0.8/vrf/dev/VRFConsumerBaseV2Plus.sol";
+import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/VRFV2PlusClient.sol";
 
 /// @title IdentityMDRaffle
-/// @notice Holder-gated on-chain raffles for Identity MD (IDMD) collectors.
-/// @dev Admins create timed raffles. Holders enter via signed tx. After close,
-///      anyone requests a draw; after DRAW_DELAY_BLOCKS anyone finalizes using
-///      prevrandao + blockhash randomness. Only wallets still holding IDMD at
-///      finalize time are eligible to win. Winners are verifiable via pickWinners().
-contract IdentityMDRaffle is Ownable, ReentrancyGuard {
+/// @notice Holder-gated on-chain raffles with Chainlink VRF v2.5 randomness.
+contract IdentityMDRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
     IERC721 public immutable identityMD;
 
     enum RaffleStatus {
@@ -26,17 +23,28 @@ contract IdentityMDRaffle is Ownable, ReentrancyGuard {
         uint256 winnerCount;
         uint256 endsAt;
         RaffleStatus status;
-        uint256 drawRequestedAt;
+        uint256 vrfRequestId;
         uint256 randomSeed;
         address[] winners;
     }
 
+    struct VrfConfig {
+        bytes32 keyHash;
+        uint256 subscriptionId;
+        uint32 callbackGasLimit;
+        uint16 requestConfirmations;
+        bool nativePayment;
+    }
+
     uint256 public nextRaffleId;
+    VrfConfig public vrfConfig;
+
     mapping(uint256 => Raffle) private _raffles;
     mapping(uint256 => address[]) private _entries;
     mapping(uint256 => address[]) private _eligibleEntriesAtDraw;
     mapping(uint256 => mapping(address => bool)) public hasEntered;
     mapping(address => bool) public admins;
+    mapping(uint256 => uint256) public requestIdToRaffleId;
 
     event RaffleCreated(
         uint256 indexed raffleId,
@@ -46,7 +54,7 @@ contract IdentityMDRaffle is Ownable, ReentrancyGuard {
         address indexed creator
     );
     event RaffleEntered(uint256 indexed raffleId, address indexed participant);
-    event DrawRequested(uint256 indexed raffleId, uint256 drawBlock);
+    event DrawRequested(uint256 indexed raffleId, uint256 indexed vrfRequestId);
     event RaffleFinalized(
         uint256 indexed raffleId,
         uint256 randomSeed,
@@ -55,14 +63,12 @@ contract IdentityMDRaffle is Ownable, ReentrancyGuard {
     );
     event AdminAdded(address indexed admin, address indexed addedBy);
     event AdminRemoved(address indexed admin, address indexed removedBy);
+    event VrfConfigUpdated(bytes32 keyHash, uint256 subscriptionId, uint32 callbackGasLimit);
 
     error RaffleNotFound();
     error RaffleNotOpen();
     error RaffleStillOpen();
-    error DrawNotRequested();
     error DrawAlreadyRequested();
-    error DrawDelayNotMet();
-    error DrawWindowExpired();
     error NotIdentityMDHolder();
     error NotAdmin();
     error AlreadyEntered();
@@ -70,23 +76,25 @@ contract IdentityMDRaffle is Ownable, ReentrancyGuard {
     error InvalidEndTime();
     error NoEntries();
     error NoEligibleEntries();
-    error ZeroAddress();
-    error CannotRemoveOwner();
+    error InvalidZeroAddress();
+    error InvalidVrfConfig();
+    error OnlyCoordinator();
 
-    /// @notice Blocks between draw request and finalize.
-    uint256 public constant DRAW_DELAY_BLOCKS = 5;
-    /// @notice blockhash(drawRequestedAt) is zero after 256 blocks — finalize in time.
-    uint256 public constant DRAW_FINALIZE_WINDOW = 250;
-
-    constructor(address identityMD_, address initialOwner) Ownable(initialOwner) {
-        if (identityMD_ == address(0)) revert ZeroAddress();
+    constructor(
+        address identityMD_,
+        address vrfCoordinator_,
+        address initialOwner,
+        VrfConfig memory vrfConfig_
+    ) VRFConsumerBaseV2Plus(vrfCoordinator_) {
+        if (identityMD_ == address(0) || vrfCoordinator_ == address(0) || initialOwner == address(0)) {
+            revert InvalidZeroAddress();
+        }
+        if (vrfConfig_.subscriptionId == 0 || vrfConfig_.keyHash == bytes32(0)) {
+            revert InvalidVrfConfig();
+        }
         identityMD = IERC721(identityMD_);
+        vrfConfig = vrfConfig_;
         admins[initialOwner] = true;
-    }
-
-    modifier onlyAdmin() {
-        if (!isAdmin(msg.sender)) revert NotAdmin();
-        _;
     }
 
     function isAdmin(address account) public view returns (bool) {
@@ -94,7 +102,7 @@ contract IdentityMDRaffle is Ownable, ReentrancyGuard {
     }
 
     function addAdmin(address account) external onlyOwner {
-        if (account == address(0)) revert ZeroAddress();
+        if (account == address(0)) revert InvalidZeroAddress();
         admins[account] = true;
         emit AdminAdded(account, msg.sender);
     }
@@ -103,6 +111,19 @@ contract IdentityMDRaffle is Ownable, ReentrancyGuard {
         if (account == owner()) revert CannotRemoveOwner();
         admins[account] = false;
         emit AdminRemoved(account, msg.sender);
+    }
+
+    modifier onlyAdmin() {
+        if (!isAdmin(msg.sender)) revert NotAdmin();
+        _;
+    }
+
+    error CannotRemoveOwner();
+
+    function setVrfConfig(VrfConfig calldata config) external onlyOwner {
+        if (config.subscriptionId == 0 || config.keyHash == bytes32(0)) revert InvalidVrfConfig();
+        vrfConfig = config;
+        emit VrfConfigUpdated(config.keyHash, config.subscriptionId, config.callbackGasLimit);
     }
 
     function createRaffle(
@@ -121,7 +142,7 @@ contract IdentityMDRaffle is Ownable, ReentrancyGuard {
             winnerCount: winnerCount,
             endsAt: endsAt,
             status: RaffleStatus.Open,
-            drawRequestedAt: 0,
+            vrfRequestId: 0,
             randomSeed: 0,
             winners: new address[](0)
         });
@@ -129,7 +150,6 @@ contract IdentityMDRaffle is Ownable, ReentrancyGuard {
         emit RaffleCreated(raffleId, title, winnerCount, endsAt, msg.sender);
     }
 
-    /// @notice Requires a signed transaction. One entry per wallet while raffle is open.
     function enter(uint256 raffleId) external nonReentrant {
         Raffle storage raffle = _requireRaffle(raffleId);
         if (raffle.status != RaffleStatus.Open) revert RaffleNotOpen();
@@ -143,6 +163,7 @@ contract IdentityMDRaffle is Ownable, ReentrancyGuard {
         emit RaffleEntered(raffleId, msg.sender);
     }
 
+    /// @notice Requests Chainlink VRF randomness after the raffle ends.
     function requestDraw(uint256 raffleId) external {
         Raffle storage raffle = _requireRaffle(raffleId);
         if (raffle.status != RaffleStatus.Open) revert DrawAlreadyRequested();
@@ -150,20 +171,34 @@ contract IdentityMDRaffle is Ownable, ReentrancyGuard {
         if (_entries[raffleId].length == 0) revert NoEntries();
 
         raffle.status = RaffleStatus.DrawRequested;
-        raffle.drawRequestedAt = block.number;
 
-        emit DrawRequested(raffleId, block.number);
+        VrfConfig memory cfg = vrfConfig;
+        uint256 requestId = s_vrfCoordinator.requestRandomWords(
+            VRFV2PlusClient.RandomWordsRequest({
+                keyHash: cfg.keyHash,
+                subId: cfg.subscriptionId,
+                requestConfirmations: cfg.requestConfirmations,
+                callbackGasLimit: cfg.callbackGasLimit,
+                numWords: 1,
+                extraArgs: VRFV2PlusClient._argsToBytes(
+                    VRFV2PlusClient.ExtraArgsV1({nativePayment: cfg.nativePayment})
+                )
+            })
+        );
+
+        raffle.vrfRequestId = requestId;
+        requestIdToRaffleId[requestId] = raffleId;
+
+        emit DrawRequested(raffleId, requestId);
     }
 
-    function finalizeDraw(uint256 raffleId) external nonReentrant {
+    function fulfillRandomWords(
+        uint256 requestId,
+        uint256[] calldata randomWords
+    ) internal override {
+        uint256 raffleId = requestIdToRaffleId[requestId];
         Raffle storage raffle = _requireRaffle(raffleId);
-        if (raffle.status != RaffleStatus.DrawRequested) revert DrawNotRequested();
-        if (block.number < raffle.drawRequestedAt + DRAW_DELAY_BLOCKS) {
-            revert DrawDelayNotMet();
-        }
-        if (block.number > raffle.drawRequestedAt + DRAW_FINALIZE_WINDOW) {
-            revert DrawWindowExpired();
-        }
+        if (raffle.status != RaffleStatus.DrawRequested) return;
 
         address[] memory eligible = _filterEligibleEntries(_entries[raffleId]);
         if (eligible.length == 0) revert NoEligibleEntries();
@@ -175,7 +210,7 @@ contract IdentityMDRaffle is Ownable, ReentrancyGuard {
             winnerCount = eligible.length;
         }
 
-        uint256 seed = _deriveSeed(raffleId, eligible, raffle.drawRequestedAt);
+        uint256 seed = randomWords[0];
         address[] memory winners = pickWinners(seed, eligible, winnerCount);
 
         raffle.randomSeed = seed;
@@ -200,7 +235,7 @@ contract IdentityMDRaffle is Ownable, ReentrancyGuard {
             uint256 winnerCount,
             uint256 endsAt,
             RaffleStatus status,
-            uint256 drawRequestedAt,
+            uint256 vrfRequestId,
             uint256 randomSeed,
             address[] memory winners
         )
@@ -212,7 +247,7 @@ contract IdentityMDRaffle is Ownable, ReentrancyGuard {
             raffle.winnerCount,
             raffle.endsAt,
             raffle.status,
-            raffle.drawRequestedAt,
+            raffle.vrfRequestId,
             raffle.randomSeed,
             raffle.winners
         );
@@ -239,7 +274,6 @@ contract IdentityMDRaffle is Ownable, ReentrancyGuard {
         return identityMD.balanceOf(account) > 0;
     }
 
-    /// @notice Preview who would be eligible if finalize ran now (before close).
     function previewEligibleEntries(
         uint256 raffleId
     ) external view returns (address[] memory) {
@@ -247,7 +281,6 @@ contract IdentityMDRaffle is Ownable, ReentrancyGuard {
         return _filterEligibleEntries(_entries[raffleId]);
     }
 
-    /// @notice Pure Fisher-Yates-style selection without replacement.
     function pickWinners(
         uint256 seed,
         address[] memory entries,
@@ -331,26 +364,6 @@ contract IdentityMDRaffle is Ownable, ReentrancyGuard {
                 eligible[j++] = entries[i];
             }
         }
-    }
-
-    function _deriveSeed(
-        uint256 raffleId,
-        address[] memory eligibleEntries,
-        uint256 drawRequestedAt
-    ) internal view returns (uint256) {
-        bytes32 entriesHash = keccak256(abi.encode(eligibleEntries));
-        return
-            uint256(
-                keccak256(
-                    abi.encodePacked(
-                        block.prevrandao,
-                        blockhash(drawRequestedAt),
-                        entriesHash,
-                        raffleId,
-                        drawRequestedAt
-                    )
-                )
-            );
     }
 
     function _boundedRandom(

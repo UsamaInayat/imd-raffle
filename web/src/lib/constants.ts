@@ -24,7 +24,7 @@ export const RAFFLE_ABI = [
       { name: "winnerCount", type: "uint256" },
       { name: "endsAt", type: "uint256" },
       { name: "status", type: "uint8" },
-      { name: "drawRequestedAt", type: "uint256" },
+      { name: "vrfRequestId", type: "uint256" },
       { name: "randomSeed", type: "uint256" },
       { name: "winners", type: "address[]" },
     ],
@@ -40,14 +40,12 @@ export const RAFFLE_ABI = [
   { type: "function", name: "owner", inputs: [], outputs: [{ type: "address" }], stateMutability: "view" },
   { type: "function", name: "enter", inputs: [{ name: "raffleId", type: "uint256" }], outputs: [], stateMutability: "nonpayable" },
   { type: "function", name: "requestDraw", inputs: [{ name: "raffleId", type: "uint256" }], outputs: [], stateMutability: "nonpayable" },
-  { type: "function", name: "finalizeDraw", inputs: [{ name: "raffleId", type: "uint256" }], outputs: [], stateMutability: "nonpayable" },
   { type: "function", name: "verifyWinners", inputs: [{ name: "raffleId", type: "uint256" }], outputs: [{ type: "bool" }, { type: "address[]" }, { type: "address[]" }], stateMutability: "view" },
   { type: "function", name: "pickWinners", inputs: [{ name: "seed", type: "uint256" }, { name: "entries", type: "address[]" }, { name: "winnerCount", type: "uint256" }], outputs: [{ type: "address[]" }], stateMutability: "pure" },
+  { type: "function", name: "requestIdToRaffleId", inputs: [{ name: "requestId", type: "uint256" }], outputs: [{ type: "uint256" }], stateMutability: "view" },
   { type: "function", name: "createRaffle", inputs: [{ name: "title", type: "string" }, { name: "description", type: "string" }, { name: "winnerCount", type: "uint256" }, { name: "endsAt", type: "uint256" }], outputs: [{ type: "uint256" }], stateMutability: "nonpayable" },
   { type: "function", name: "addAdmin", inputs: [{ name: "account", type: "address" }], outputs: [], stateMutability: "nonpayable" },
   { type: "function", name: "removeAdmin", inputs: [{ name: "account", type: "address" }], outputs: [], stateMutability: "nonpayable" },
-  { type: "function", name: "DRAW_DELAY_BLOCKS", inputs: [], outputs: [{ type: "uint256" }], stateMutability: "view" },
-  { type: "function", name: "DRAW_FINALIZE_WINDOW", inputs: [], outputs: [{ type: "uint256" }], stateMutability: "view" },
 ] as const;
 
 export const ERC721_ABI = [
@@ -63,7 +61,7 @@ export enum RaffleStatus {
 export function formatStatus(status: RaffleStatus): string {
   switch (status) {
     case RaffleStatus.Open: return "OPEN";
-    case RaffleStatus.DrawRequested: return "DRAW REQUESTED";
+    case RaffleStatus.DrawRequested: return "VRF PENDING";
     case RaffleStatus.Closed: return "CLOSED";
     default: return "UNKNOWN";
   }

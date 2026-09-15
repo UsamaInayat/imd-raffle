@@ -8,7 +8,7 @@ Holder-gated, fully on-chain raffle platform for [Identity MD](https://opensea.i
 - **Holder gating** at entry and at winner selection
 - **Multi-admin** support (owner adds admins on-chain)
 - **Admin portal** — create raffles, manage admins, trigger draws
-- **Public verify page** — replay winner selection independently
+- **Chainlink VRF v2.5** — provably fair randomness, no blockhash window
 - **Railway-ready** Next.js deployment
 
 ## Structure
@@ -30,7 +30,8 @@ imd-raffle/
 ```bash
 npm install
 npm test
-npx hardhat run scripts/deploy.ts --network mainnet
+VRF_SUBSCRIPTION_ID=123 npx hardhat run scripts/deploy.ts --network mainnet
+# Then add contract as VRF consumer at https://vrf.chain.link
 ```
 
 ### Frontend
@@ -70,8 +71,8 @@ npm run dev
 2. Owner adds admin wallets via `/admin` → `addAdmin()`
 3. Admins create raffles (signed tx)
 4. Holders enter (signed tx, gas required)
-5. After end: `requestDraw` → wait 5 blocks → `finalizeDraw`
-6. Anyone verifies on `/verify`
+5. After end: `requestDraw()` → Chainlink VRF callback auto-finalizes
+6. Verify on `/verify` + [vrf.chain.link](https://vrf.chain.link)
 
 ## Docs
 

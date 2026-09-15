@@ -26,7 +26,7 @@ export type RaffleData = {
   winnerCount: bigint;
   endsAt: bigint;
   status: RaffleStatus;
-  drawRequestedAt: bigint;
+  vrfRequestId: bigint;
   randomSeed: bigint;
   winners: readonly `0x${string}`[];
   entryCount: bigint;
@@ -45,8 +45,6 @@ function useRaffleActions(raffleId: number) {
     enter: () => write({ abi: RAFFLE_ABI, functionName: "enter", args: [BigInt(raffleId)] }),
     requestDraw: () =>
       write({ abi: RAFFLE_ABI, functionName: "requestDraw", args: [BigInt(raffleId)] }),
-    finalizeDraw: () =>
-      write({ abi: RAFFLE_ABI, functionName: "finalizeDraw", args: [BigInt(raffleId)] }),
     isPending,
     txHash,
     error,
@@ -96,7 +94,7 @@ export function useAllRaffles() {
           winnerCount,
           endsAt,
           status,
-          drawRequestedAt,
+          vrfRequestId,
           randomSeed,
           winners,
         ] = raffle;
@@ -108,7 +106,7 @@ export function useAllRaffles() {
           winnerCount,
           endsAt,
           status: status as RaffleStatus,
-          drawRequestedAt,
+          vrfRequestId,
           randomSeed,
           winners,
           entryCount: entryCount as bigint,
@@ -161,7 +159,7 @@ function RaffleCard({ raffle, now }: { raffle: RaffleData; now: number }) {
     enabled: Boolean(address),
   });
 
-  const { enter, requestDraw, finalizeDraw, isPending, error, txHash } =
+  const { enter, requestDraw, isPending, error, txHash } =
     useRaffleActions(raffle.id);
 
   const isOpen =
@@ -236,19 +234,14 @@ function RaffleCard({ raffle, now }: { raffle: RaffleData; now: number }) {
             disabled={isPending}
             onClick={requestDraw}
           >
-            REQUEST DRAW
+            REQUEST VRF DRAW
           </button>
         ) : null}
 
         {raffle.status === RaffleStatus.DrawRequested ? (
-          <button
-            type="button"
-            className="imd-btn imd-btn-sm"
-            disabled={isPending}
-            onClick={finalizeDraw}
-          >
-            FINALIZE DRAW
-          </button>
+          <span className="imd-btn imd-btn-sm opacity-60">
+            VRF PENDING…
+          </span>
         ) : null}
 
         <Link href={`/verify?id=${raffle.id}`} className="imd-btn imd-btn-sm">
