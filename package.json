@@ -2,6 +2,9 @@
   "name": "imd-raffle",
   "version": "1.0.0",
   "private": true,
+  "engines": {
+    "node": ">=20.9.0"
+  },
   "description": "Holder-gated on-chain raffle platform for Identity MD collectors",
   "scripts": {
     "compile": "hardhat compile",
