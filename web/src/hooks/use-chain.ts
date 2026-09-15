@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useCallback, useMemo, useState } from "react";
 import { usePrivy, useWallets } from "@privy-io/react-auth";
 import {
   createWalletClient,
@@ -69,71 +70,38 @@ export function useContractRead<T>({
   refetchInterval?: number;
   contractAddress?: Address;
 }) {
-  const [data, setData] = useState<T | undefined>();
-  const [error, setError] = useState<string | undefined>();
   const argsKey = serializeArgs(args);
-  const queryKey = `${contractAddress}:${functionName}:${argsKey}:${enabled}`;
-  const argsRef = useRef(args);
-  const abiRef = useRef(abi);
+  const canRead =
+    enabled && Boolean(contractAddress) && !contractAddress.endsWith("0000");
 
-  argsRef.current = args;
-  abiRef.current = abi;
-
-  const fetchData = useCallback(async () => {
-    if (
-      !enabled ||
-      !contractAddress ||
-      contractAddress.endsWith("0000")
-    ) {
-      return;
-    }
-
-    try {
-      const result = await publicClient.readContract({
+  const query = useQuery({
+    queryKey: ["contract-read", contractAddress, functionName, argsKey],
+    queryFn: async () =>
+      publicClient.readContract({
         address: contractAddress,
-        abi: abiRef.current,
+        abi,
         functionName,
-        args: argsRef.current,
-      });
-      setData(result as T);
-      setError(undefined);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "read failed");
-    }
-  }, [contractAddress, enabled, functionName]);
+        args,
+      }) as Promise<T>,
+    enabled: canRead,
+    staleTime: 30_000,
+    refetchInterval,
+    refetchOnWindowFocus: false,
+    retry: 1,
+  });
 
-  useEffect(() => {
-    setData(undefined);
-    setError(undefined);
-  }, [queryKey]);
-
-  useEffect(() => {
-    if (
-      !enabled ||
-      !contractAddress ||
-      contractAddress.endsWith("0000")
-    ) {
-      return;
-    }
-
-    void fetchData();
-
-    if (!refetchInterval) return;
-    const timer = setInterval(() => void fetchData(), refetchInterval);
-    return () => clearInterval(timer);
-  }, [queryKey, refetchInterval, fetchData, enabled, contractAddress]);
-
-  const isLoading =
-    enabled &&
-    !contractAddress.endsWith("0000") &&
-    data === undefined &&
-    error === undefined;
-
-  return { data, isLoading, error, refetch: fetchData };
+  return {
+    data: query.data,
+    isLoading: query.isPending,
+    isFetching: query.isFetching,
+    error: query.error instanceof Error ? query.error.message : undefined,
+    refetch: query.refetch,
+  };
 }
 
 export function useContractWrite() {
   const { wallets } = useWallets();
+  const queryClient = useQueryClient();
   const [isPending, setIsPending] = useState(false);
   const [txHash, setTxHash] = useState<Hash | undefined>();
   const [error, setError] = useState<string | undefined>();
@@ -176,13 +144,16 @@ export function useContractWrite() {
 
         setTxHash(hash);
         await publicClient.waitForTransactionReceipt({ hash });
+
+        await queryClient.invalidateQueries({ queryKey: ["contract-read"] });
+        await queryClient.invalidateQueries({ queryKey: ["all-raffles"] });
       } catch (err) {
         setError(err instanceof Error ? err.message : "transaction failed");
       } finally {
         setIsPending(false);
       }
     },
-    [wallets]
+    [queryClient, wallets]
   );
 
   return { write, isPending, txHash, error };
@@ -191,7 +162,6 @@ export function useContractWrite() {
 export function useIsHolder() {
   const address = useWalletAddress();
   const { authenticated, ready } = usePrivy();
-
   const enabled = Boolean(ready && authenticated && address);
 
   const { data: balance, isLoading, refetch } = useContractRead<bigint>({
@@ -213,7 +183,6 @@ export function useIsHolder() {
 export function useIsAdmin() {
   const address = useWalletAddress();
   const { authenticated, ready } = usePrivy();
-
   const enabled = Boolean(ready && authenticated && address);
 
   const { data: isAdmin, isLoading, refetch } = useContractRead<boolean>({
@@ -233,7 +202,6 @@ export function useIsAdmin() {
 export function useIsOwner() {
   const address = useWalletAddress();
   const { authenticated, ready } = usePrivy();
-
   const enabled = Boolean(ready && authenticated && address);
 
   const { data: owner, isLoading } = useContractRead<Address>({

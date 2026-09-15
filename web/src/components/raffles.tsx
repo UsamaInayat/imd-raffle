@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePrivy } from "@privy-io/react-auth";
 import { StatCard } from "@/components/layout";
@@ -51,85 +52,82 @@ function useRaffleActions(raffleId: number) {
   };
 }
 
-export function useAllRaffles() {
-  const [raffles, setRaffles] = useState<RaffleData[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const hasLoadedRef = useRef(false);
+async function fetchAllRaffles(count: number): Promise<RaffleData[]> {
+  const loaded: RaffleData[] = [];
 
+  for (let id = 0; id < count; id++) {
+    const [raffle, entryCount] = await Promise.all([
+      publicClient.readContract({
+        address: RAFFLE_CONTRACT_ADDRESS,
+        abi: RAFFLE_ABI,
+        functionName: "getRaffle",
+        args: [BigInt(id)],
+      }),
+      publicClient.readContract({
+        address: RAFFLE_CONTRACT_ADDRESS,
+        abi: RAFFLE_ABI,
+        functionName: "getEntryCount",
+        args: [BigInt(id)],
+      }),
+    ]);
+
+    const [
+      title,
+      description,
+      winnerCount,
+      endsAt,
+      status,
+      vrfRequestId,
+      randomSeed,
+      winners,
+    ] = raffle;
+
+    loaded.push({
+      id,
+      title,
+      description,
+      winnerCount,
+      endsAt,
+      status: status as RaffleStatus,
+      vrfRequestId,
+      randomSeed,
+      winners,
+      entryCount: entryCount as bigint,
+    });
+  }
+
+  return loaded.reverse();
+}
+
+export function useAllRaffles() {
   const { data: raffleCount } = useContractRead<bigint>({
     abi: RAFFLE_ABI,
     functionName: "getRaffleCount",
     refetchInterval: 15000,
   });
 
-  useEffect(() => {
-    async function load() {
-      if (raffleCount === undefined || RAFFLE_CONTRACT_ADDRESS.endsWith("0000")) {
-        return;
-      }
+  const count = raffleCount !== undefined ? Number(raffleCount) : undefined;
 
-      const count = Number(raffleCount);
-      if (count === 0) {
-        setRaffles([]);
-        setIsLoading(false);
-        return;
-      }
+  const query = useQuery({
+    queryKey: ["all-raffles", RAFFLE_CONTRACT_ADDRESS, count ?? "pending"],
+    queryFn: async () => {
+      if (count === 0) return [] as RaffleData[];
+      return fetchAllRaffles(count ?? 0);
+    },
+    enabled:
+      count !== undefined && !RAFFLE_CONTRACT_ADDRESS.endsWith("0000"),
+    staleTime: 10_000,
+    refetchInterval: 15_000,
+    refetchOnWindowFocus: false,
+    placeholderData: keepPreviousData,
+  });
 
-      if (!hasLoadedRef.current) {
-        setIsLoading(true);
-      }
-      const loaded: RaffleData[] = [];
-
-      for (let id = 0; id < count; id++) {
-        const [raffle, entryCount] = await Promise.all([
-          publicClient.readContract({
-            address: RAFFLE_CONTRACT_ADDRESS,
-            abi: RAFFLE_ABI,
-            functionName: "getRaffle",
-            args: [BigInt(id)],
-          }),
-          publicClient.readContract({
-            address: RAFFLE_CONTRACT_ADDRESS,
-            abi: RAFFLE_ABI,
-            functionName: "getEntryCount",
-            args: [BigInt(id)],
-          }),
-        ]);
-
-        const [
-          title,
-          description,
-          winnerCount,
-          endsAt,
-          status,
-          vrfRequestId,
-          randomSeed,
-          winners,
-        ] = raffle;
-
-        loaded.push({
-          id,
-          title,
-          description,
-          winnerCount,
-          endsAt,
-          status: status as RaffleStatus,
-          vrfRequestId,
-          randomSeed,
-          winners,
-          entryCount: entryCount as bigint,
-        });
-      }
-
-      setRaffles(loaded.reverse());
-      hasLoadedRef.current = true;
-      setIsLoading(false);
-    }
-
-    void load();
-  }, [raffleCount]);
-
-  return { raffles, isLoading, total: Number(raffleCount ?? BigInt(0)) };
+  return {
+    raffles: query.data ?? [],
+    isLoading: query.isPending,
+    total: count ?? 0,
+    refetch: query.refetch,
+  };
 }
 
 export function useRaffleStats() {
@@ -309,7 +307,7 @@ export function RaffleGrid() {
     );
   }
 
-  if (isLoading) {
+  if (isLoading && raffles.length === 0) {
     return (
       <div className="imd-box p-6 text-center font-mono text-sm opacity-60">
         loading raffles…

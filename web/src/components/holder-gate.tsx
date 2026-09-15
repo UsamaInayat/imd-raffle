@@ -56,8 +56,8 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
   const { isHolder, isLoading: holderLoading } = useIsHolder();
   const { isAdmin, isLoading: adminLoading } = useIsAdmin();
 
-  if (!ready || holderLoading || adminLoading) {
-    return <div className="imd-box p-8 text-center font-mono text-sm">loading admin access…</div>;
+  if (!ready) {
+    return <div className="imd-box p-8 text-center font-mono text-sm">initializing…</div>;
   }
 
   if (!authenticated) {
@@ -66,6 +66,14 @@ export function AdminGate({ children }: { children: React.ReactNode }) {
         <h2 className="font-mono text-xl">Admin portal</h2>
         <p className="mt-3 font-mono text-sm text-neutral-600">connect your admin wallet to continue.</p>
         <button type="button" className="imd-btn mt-6" onClick={login}>CONNECT WALLET</button>
+      </div>
+    );
+  }
+
+  if (authenticated && (holderLoading || adminLoading)) {
+    return (
+      <div className="imd-box p-8 text-center font-mono text-sm">
+        loading admin access…
       </div>
     );
   }

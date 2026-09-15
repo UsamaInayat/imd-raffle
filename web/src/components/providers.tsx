@@ -5,7 +5,15 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { mainnet } from "viem/chains";
 import { PRIVY_APP_ID } from "@/lib/constants";
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 15_000,
+      refetchOnWindowFocus: false,
+      retry: 1,
+    },
+  },
+});
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (

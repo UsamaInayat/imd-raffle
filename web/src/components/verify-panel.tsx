@@ -65,7 +65,7 @@ export function VerifyPanel() {
     );
   }
 
-  if (raffleLoading) {
+  if (raffleLoading && !raffle) {
     return (
       <div className="imd-box p-6 font-mono text-sm opacity-60">
         loading raffle #{raffleId}…

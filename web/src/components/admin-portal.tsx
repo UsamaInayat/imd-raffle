@@ -71,11 +71,17 @@ function CreateRaffleForm() {
 }
 
 function ManageAdmins() {
-  const { isOwner } = useIsOwner();
+  const { isOwner, isLoading: ownerLoading } = useIsOwner();
   const address = useWalletAddress();
   const { write, isPending, error, txHash } = useContractWrite();
   const [newAdmin, setNewAdmin] = useState("");
   const [removeAdmin, setRemoveAdmin] = useState("");
+
+  if (ownerLoading) {
+    return (
+      <div className="imd-box p-6 font-mono text-sm opacity-60">loading owner status…</div>
+    );
+  }
 
   if (!isOwner) {
     return (
@@ -133,7 +139,9 @@ function ManageAdmins() {
 function AdminRaffleList({ raffles, isLoading }: { raffles: ReturnType<typeof useAllRaffles>["raffles"]; isLoading: boolean }) {
   const { write, isPending, error } = useContractWrite();
 
-  if (isLoading) return <div className="imd-box p-6 font-mono text-sm opacity-60">loading…</div>;
+  if (isLoading && raffles.length === 0) {
+    return <div className="imd-box p-6 font-mono text-sm opacity-60">loading…</div>;
+  }
 
   return (
     <div className="imd-box p-6">
