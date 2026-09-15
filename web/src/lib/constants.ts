@@ -44,6 +44,7 @@ export const RAFFLE_ABI = [
   { type: "function", name: "pickWinners", inputs: [{ name: "seed", type: "uint256" }, { name: "entries", type: "address[]" }, { name: "winnerCount", type: "uint256" }], outputs: [{ type: "address[]" }], stateMutability: "pure" },
   { type: "function", name: "requestIdToRaffleId", inputs: [{ name: "requestId", type: "uint256" }], outputs: [{ type: "uint256" }], stateMutability: "view" },
   { type: "function", name: "createRaffle", inputs: [{ name: "title", type: "string" }, { name: "description", type: "string" }, { name: "winnerCount", type: "uint256" }, { name: "endsAt", type: "uint256" }], outputs: [{ type: "uint256" }], stateMutability: "nonpayable" },
+  { type: "function", name: "cancelRaffle", inputs: [{ name: "raffleId", type: "uint256" }], outputs: [], stateMutability: "nonpayable" },
   { type: "function", name: "addAdmin", inputs: [{ name: "account", type: "address" }], outputs: [], stateMutability: "nonpayable" },
   { type: "function", name: "removeAdmin", inputs: [{ name: "account", type: "address" }], outputs: [], stateMutability: "nonpayable" },
 ] as const;
@@ -56,6 +57,7 @@ export enum RaffleStatus {
   Open = 0,
   DrawRequested = 1,
   Closed = 2,
+  Cancelled = 3,
 }
 
 export function formatStatus(status: RaffleStatus): string {
@@ -63,6 +65,7 @@ export function formatStatus(status: RaffleStatus): string {
     case RaffleStatus.Open: return "OPEN";
     case RaffleStatus.DrawRequested: return "VRF PENDING";
     case RaffleStatus.Closed: return "CLOSED";
+    case RaffleStatus.Cancelled: return "CANCELLED";
     default: return "UNKNOWN";
   }
 }

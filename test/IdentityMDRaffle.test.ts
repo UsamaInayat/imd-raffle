@@ -118,6 +118,51 @@ describe("IdentityMDRaffle (Chainlink VRF)", function () {
     expect(valid).to.equal(true);
   });
 
+  it("closes with zero winners when all entrants sold IDMD before VRF", async () => {
+    const { owner, alice, bob, carol, nft, vrf, raffle } = await deployFixture();
+    const endsAt = (await time.latest()) + 100;
+
+    await raffle.connect(owner).createRaffle("Empty Draw", "", 2, endsAt);
+    await raffle.connect(alice).enter(0);
+    await raffle.connect(bob).enter(0);
+    await raffle.connect(carol).enter(0);
+
+    await nft.connect(alice).transferFrom(alice.address, owner.address, 0n);
+    await nft.connect(bob).transferFrom(bob.address, owner.address, 1n);
+    await nft.connect(carol).transferFrom(carol.address, owner.address, 2n);
+
+    await time.increaseTo(endsAt + 1);
+    await raffle.requestDraw(0);
+    await finalizeViaVrf(raffle, vrf, 0n);
+
+    const raffleData = await raffle.getRaffle(0);
+    expect(raffleData.status).to.equal(2);
+    expect(raffleData.winners.length).to.equal(0);
+
+    const [valid] = await raffle.verifyWinners(0);
+    expect(valid).to.equal(true);
+  });
+
+  it("allows admin to cancel open raffles", async () => {
+    const { owner, alice, raffle } = await deployFixture();
+    const endsAt = (await time.latest()) + 3600;
+
+    await raffle.connect(owner).createRaffle("Cancel Me", "", 1, endsAt);
+    await raffle.connect(alice).enter(0);
+
+    await expect(raffle.connect(owner).cancelRaffle(0))
+      .to.emit(raffle, "RaffleCancelled")
+      .withArgs(0, owner.address);
+
+    const raffleData = await raffle.getRaffle(0);
+    expect(raffleData.status).to.equal(3);
+
+    await expect(raffle.connect(alice).enter(0)).to.be.revertedWithCustomError(
+      raffle,
+      "RaffleNotOpen"
+    );
+  });
+
   it("finalizes with verifiable winners via Chainlink VRF callback", async () => {
     const { owner, alice, bob, carol, vrf, raffle } = await deployFixture();
     const endsAt = (await time.latest()) + 100;

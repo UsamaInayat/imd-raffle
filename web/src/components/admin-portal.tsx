@@ -147,6 +147,11 @@ function AdminRaffleList({ raffles, isLoading }: { raffles: ReturnType<typeof us
             </div>
             <p className="mt-2 text-neutral-600">{raffle.entryCount.toString()} entries · {raffle.winnerCount.toString()} winners</p>
             <div className="mt-3 flex flex-wrap gap-2">
+              {raffle.status === RaffleStatus.Open ? (
+                <button type="button" className="imd-btn imd-btn-sm" disabled={isPending} onClick={() => write({ abi: RAFFLE_ABI, functionName: "cancelRaffle", args: [BigInt(raffle.id)] })}>
+                  CANCEL
+                </button>
+              ) : null}
               {raffle.status === RaffleStatus.Open && Number(raffle.endsAt) <= Math.floor(Date.now() / 1000) ? (
                 <button type="button" className="imd-btn imd-btn-sm" disabled={isPending} onClick={() => write({ abi: RAFFLE_ABI, functionName: "requestDraw", args: [BigInt(raffle.id)] })}>
                   REQUEST VRF DRAW

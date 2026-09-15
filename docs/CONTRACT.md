@@ -66,3 +66,28 @@ Unlike the old blockhash design, there is **no 250-block deadline**. After `requ
 - Small LINK fee per draw from your subscription
 - If subscription runs out of LINK, VRF requests fail — keep it funded
 - Owner can update `vrfConfig` via `setVrfConfig()`
+
+## Gas & flexibility (pre-mainnet)
+
+| Feature | Detail |
+|---------|--------|
+| Optimizer | 1000 runs — lower runtime gas on `enter()` / VRF callback |
+| Storage packing | `endsAt` (uint64), `winnerCount` (uint32), `status` (uint8) in one slot |
+| VRF callback event | Emits counts only — winners/eligible read from storage (saves callback gas) |
+| `MAX_WINNERS` | 256 — prevents callback OOG from absurd winner counts |
+| String limits | Title 128 chars, description 512 — prevents storage griefing |
+| `cancelRaffle()` | Admin can cancel open raffles before draw (no redeploy needed for mistakes) |
+| Zero eligible at draw | Closes cleanly with zero winners instead of stuck VRF state |
+| `setVrfConfig()` | Owner can bump `callbackGasLimit` if entry counts grow |
+
+### VRF callback gas vs entries
+
+Each entry costs ~2× `balanceOf` external calls during the draw filter. Rough guidance:
+
+| Entries | Suggested `callbackGasLimit` |
+|---------|------------------------------|
+| ≤ 200 | 500,000 (default) |
+| 200–500 | 750,000–1,000,000 |
+| 500+ | Increase via `setVrfConfig()` and test on a fork |
+
+No hard on-chain entry cap — tune gas limit instead so large community raffles stay supported.
