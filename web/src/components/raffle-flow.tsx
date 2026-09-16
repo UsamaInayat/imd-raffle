@@ -69,12 +69,13 @@ export function RaffleFlowSteps({
 
 export function RaffleHowItWorks() {
   return (
-    <div className="imd-fade-in p-6 sm:p-8">
-      <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">how it works</p>
+    <div className="imd-fade-in mx-auto max-w-3xl">
+      <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
+        how it works
+      </p>
       <RaffleFlowSteps status={RaffleStatus.Open} isOpen />
       <p className="mt-3 font-mono text-xs leading-relaxed text-neutral-600">
-        holder-gated drops on ethereum. you only pay gas — no eth is sent to the contract.
-        after the draw closes, anyone can replay the proof on verify.
+        connect → enter → wait for timer → vrf draw → verify proof on-chain.
       </p>
     </div>
   );

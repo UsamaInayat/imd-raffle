@@ -1,12 +1,14 @@
 "use client";
 
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { usePrivy } from "@privy-io/react-auth";
 import { useIsAdmin, useIsHolder, useWalletAddress } from "@/hooks/use-chain";
 import {
   IDENTITY_MD_OPENSEA,
   RAFFLE_CONTRACT_ADDRESS,
   SITE_NAME,
+  SITE_NAV_MARK,
   shortAddress,
 } from "@/lib/constants";
 
@@ -19,29 +21,65 @@ function ConnectButton() {
   const { isAdmin } = useIsAdmin();
 
   if (!ready) {
-    return <span className="imd-btn imd-btn-sm opacity-50">CONNECT</span>;
+    return (
+      <span className="imd-pill-cell imd-pill-cell-idle" aria-hidden="true">
+        CONNECT
+      </span>
+    );
   }
 
   if (!authenticated || !address) {
     return (
-      <button type="button" className="imd-btn imd-btn-sm" onClick={login}>
+      <button type="button" className="imd-pill-cell" onClick={login}>
         CONNECT
       </button>
     );
   }
 
+  const status = isAdmin
+    ? "admin · idmd holder"
+    : isHolder
+      ? "idmd holder"
+      : "not holder";
+
   return (
-    <div className="flex items-center gap-2">
-      <span className="hidden text-[10px] uppercase tracking-widest sm:inline">
-        {isAdmin ? <span className="text-black">ADMIN · </span> : null}
-        <span className={isHolder ? "text-black" : "text-neutral-500"}>
-          {isHolder ? "IDMD HOLDER" : "NOT HOLDER"}
-        </span>
-      </span>
-      <button type="button" className="imd-btn imd-btn-sm" onClick={logout}>
-        {shortAddress(address)}
-      </button>
-    </div>
+    <button
+      type="button"
+      className="imd-pill-cell imd-pill-cell-active"
+      onClick={logout}
+      title={status}
+    >
+      {shortAddress(address)}
+    </button>
+  );
+}
+
+function NavLink({
+  href,
+  children,
+  external = false,
+}: {
+  href: string;
+  children: React.ReactNode;
+  external?: boolean;
+}) {
+  const pathname = usePathname();
+  const active = !external && pathname === href;
+
+  const className = `imd-pill-cell${active ? " imd-pill-cell-current" : ""}`;
+
+  if (external) {
+    return (
+      <a href={href} className={className} target="_blank" rel="noreferrer">
+        {children}
+      </a>
+    );
+  }
+
+  return (
+    <Link href={href} className={className}>
+      {children}
+    </Link>
   );
 }
 
@@ -50,34 +88,27 @@ export function SiteHeader() {
   const { isAdmin } = useIsAdmin();
 
   return (
-    <header className="w-full border-b border-black">
-      <nav
-        aria-label="primary"
-        className="flex w-full flex-wrap items-stretch"
-      >
-        <Link href="/" className="imd-nav-item imd-nav-logo">
-          <span aria-hidden>◇</span> {SITE_NAME}
+    <header className="imd-site-header">
+      <nav className="imd-nav" aria-label="primary">
+        <Link href="/" className="imd-pill" aria-label={`${SITE_NAME} home`}>
+          <span className="imd-pill-mark" aria-hidden="true">
+            ◇
+          </span>
+          <span className="imd-pill-brand">{SITE_NAV_MARK}</span>
         </Link>
-        <Link href="/raffles" className="imd-nav-item">
-          RAFFLES
-        </Link>
-        <Link href="/verify" className="imd-nav-item">
-          VERIFY
-        </Link>
-        {authenticated && isAdmin ? (
-          <Link href="/admin" className="imd-nav-item">
-            ADMIN
-          </Link>
-        ) : null}
-        <a
-          href="https://www.imd.fun/"
-          target="_blank"
-          rel="noreferrer"
-          className="imd-nav-item"
-        >
-          IMD.FUN
-        </a>
-        <div className="imd-nav-item ml-auto border-l border-black">
+
+        <div className="imd-pill">
+          <NavLink href="/raffles">RAFFLES</NavLink>
+          <NavLink href="/verify">VERIFY</NavLink>
+          {authenticated && isAdmin ? (
+            <NavLink href="/admin">ADMIN</NavLink>
+          ) : null}
+          <NavLink href="https://www.imd.fun/" external>
+            IMD.FUN
+          </NavLink>
+        </div>
+
+        <div className="imd-pill">
           <ConnectButton />
         </div>
       </nav>
@@ -139,8 +170,9 @@ export function SiteFooter() {
             rafael
           </a>
         </span>
-        <Link href="/raffles">Raffles</Link>
-        <Link href="/verify">Verify</Link>
+        <a href={IDENTITY_MD_OPENSEA} target="_blank" rel="noreferrer">
+          identity md collection
+        </a>
         <a href="https://www.imd.fun/" target="_blank" rel="noreferrer">
           imd.fun
         </a>
@@ -161,24 +193,10 @@ export function PageHero({
   centered?: boolean;
 }) {
   return (
-    <section
-      className={`w-full border-b border-black px-6 py-8 sm:px-8 md:px-10 ${
-        centered ? "text-center" : ""
-      }`}
-    >
-      <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
-        {eyebrow}
-      </p>
-      <h1 className="mt-2 font-mono text-3xl">{title}</h1>
-      {description ? (
-        <p
-          className={`mt-3 font-mono text-sm text-neutral-600 ${
-            centered ? "mx-auto max-w-2xl" : "max-w-3xl"
-          }`}
-        >
-          {description}
-        </p>
-      ) : null}
+    <section className={`imd-hero-copy ${centered ? "imd-hero-copy-center" : ""}`}>
+      <p className="imd-eyebrow">{eyebrow}</p>
+      <h1 className="imd-headline">{title}</h1>
+      {description ? <p className="imd-lede">{description}</p> : null}
     </section>
   );
 }
@@ -199,53 +217,3 @@ export function PageBody({
   );
 }
 
-export function AsciiOrb() {
-  return (
-    <pre className="select-none text-center font-mono text-[10px] leading-tight text-neutral-400 sm:text-xs">
-      {`        . · · · · · · · · · · · · · · · .
-     ·                                     ·
-   ·                                         ·
-  ·              ON-CHAIN RAFFLE              ·
-   ·                                         ·
-     ·                                     ·
-        . · · · · · · · · · · · · · · · .`}
-    </pre>
-  );
-}
-
-export function StatCard({
-  label,
-  tag,
-  value,
-  sub,
-  progress,
-}: {
-  label: string;
-  tag?: string;
-  value: React.ReactNode;
-  sub?: string;
-  progress?: { pct: number; bar: string };
-}) {
-  return (
-    <div className="flex min-h-[140px] flex-col p-6">
-      <div className="flex items-start justify-between gap-2">
-        <p className="text-[10px] uppercase tracking-[0.15em]">{label}</p>
-        {tag ? (
-          <span className="border border-black px-1.5 py-0.5 text-[9px] uppercase tracking-wider">
-            {tag}
-          </span>
-        ) : null}
-      </div>
-      <div className="mt-auto pt-4 font-mono text-xl sm:text-2xl">{value}</div>
-      {progress ? (
-        <div className="mt-3 font-mono text-[10px] text-neutral-600">
-          <span className="tracking-widest">{progress.bar}</span>{" "}
-          {progress.pct.toFixed(1)}%
-        </div>
-      ) : null}
-      {sub ? (
-        <p className="mt-2 font-mono text-[10px] text-neutral-500">{sub}</p>
-      ) : null}
-    </div>
-  );
-}

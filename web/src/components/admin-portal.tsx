@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useState } from "react";
 import { isAddress } from "viem";
 import {
@@ -7,14 +8,8 @@ import {
   useIsOwner,
   useWalletAddress,
 } from "@/hooks/use-chain";
-import {
-  formatStatus,
-  RAFFLE_ABI,
-  RaffleStatus,
-  shortAddress,
-} from "@/lib/constants";
+import { formatStatus, RAFFLE_ABI, shortAddress } from "@/lib/constants";
 import { useAllRaffles } from "@/components/raffles";
-import { RaffleExportActions, WinnerExportModule } from "@/components/winner-export";
 
 function CreateRaffleForm() {
   const { write, isPending, error, txHash } = useContractWrite();
@@ -136,11 +131,23 @@ function ManageAdmins() {
   );
 }
 
-function AdminRaffleList({ raffles, isLoading }: { raffles: ReturnType<typeof useAllRaffles>["raffles"]; isLoading: boolean }) {
-  const { write, isPending, error } = useContractWrite();
-
+function AdminRaffleList({
+  raffles,
+  isLoading,
+}: {
+  raffles: ReturnType<typeof useAllRaffles>["raffles"];
+  isLoading: boolean;
+}) {
   if (isLoading && raffles.length === 0) {
     return <div className="p-6 font-mono text-sm opacity-60 sm:p-8">loading…</div>;
+  }
+
+  if (raffles.length === 0) {
+    return (
+      <div className="p-6 font-mono text-sm text-neutral-600 sm:p-8">
+        no raffles yet — create one on the left.
+      </div>
+    );
   }
 
   return (
@@ -148,32 +155,27 @@ function AdminRaffleList({ raffles, isLoading }: { raffles: ReturnType<typeof us
       <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">MANAGE RAFFLES</p>
       <div className="mt-4 space-y-3">
         {raffles.map((raffle) => (
-          <div key={raffle.id} className="border border-neutral-200 p-4 font-mono text-xs">
+          <Link
+            key={raffle.id}
+            href={`/admin/raffles/${raffle.id}`}
+            className="imd-box block p-4 font-mono text-xs transition-colors hover:bg-neutral-50"
+          >
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-sm">#{raffle.id} · {raffle.title}</span>
-              <span className="border border-black px-2 py-0.5">{formatStatus(raffle.status)}</span>
+              <span className="text-sm">
+                #{raffle.id} · {raffle.title}
+              </span>
+              <span className="border border-black px-2 py-0.5 text-[10px] uppercase tracking-wider">
+                {formatStatus(raffle.status)}
+              </span>
             </div>
-            <p className="mt-2 text-neutral-600">{raffle.entryCount.toString()} entries · {raffle.winnerCount.toString()} winners</p>
-            <div className="mt-3 flex flex-wrap gap-2">
-              {raffle.status === RaffleStatus.Open ? (
-                <button type="button" className="imd-btn imd-btn-sm" disabled={isPending} onClick={() => write({ abi: RAFFLE_ABI, functionName: "cancelRaffle", args: [BigInt(raffle.id)] })}>
-                  CANCEL
-                </button>
-              ) : null}
-              {raffle.status === RaffleStatus.Open && Number(raffle.endsAt) <= Math.floor(Date.now() / 1000) ? (
-                <button type="button" className="imd-btn imd-btn-sm" disabled={isPending} onClick={() => write({ abi: RAFFLE_ABI, functionName: "requestDraw", args: [BigInt(raffle.id)] })}>
-                  REQUEST VRF DRAW
-                </button>
-              ) : null}
-              {raffle.status === RaffleStatus.DrawRequested ? (
-                <span className="text-neutral-500">VRF pending — Chainlink will callback automatically</span>
-              ) : null}
-            </div>
-            <RaffleExportActions raffle={raffle} />
-          </div>
+            <p className="mt-2 text-neutral-600">
+              {raffle.entryCount.toString()} entries · {raffle.winnerCount.toString()} winner
+              slots
+            </p>
+            <span className="imd-btn imd-btn-sm mt-3 inline-flex">OPEN</span>
+          </Link>
         ))}
       </div>
-      {error ? <p className="mt-3 font-mono text-xs text-red-600">{error}</p> : null}
     </div>
   );
 }
@@ -192,7 +194,6 @@ export function AdminPortal() {
         </div>
         <AdminRaffleList raffles={raffles} isLoading={isLoading} />
       </div>
-      <WinnerExportModule raffles={raffles} />
     </div>
   );
 }

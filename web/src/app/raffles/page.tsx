@@ -10,7 +10,7 @@ export default function RafflesPage() {
         <PageHero
           eyebrow="RAFFLES"
           title="active drops"
-          description="enter open raffles with your wallet. each card shows where it is in the flow — enter → wait → draw → verify."
+          description="holder-gated drops on ethereum. connect your wallet to enter."
         />
         <PageBody flush>
           <HolderGate>

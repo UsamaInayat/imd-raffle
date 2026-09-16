@@ -1,42 +1,36 @@
 import { Suspense } from "react";
-import {
-  AsciiOrb,
-  PageBody,
-  PageHero,
-  SiteFooter,
-  SiteHeader,
-} from "@/components/layout";
-import { HomeStats } from "@/components/raffles";
+import { BowlAnimation } from "@/components/bowl-animation";
+import { HomeStatsPanel } from "@/components/home-stats";
+import { SiteFooter, SiteHeader } from "@/components/layout";
 
 export default function HomePage() {
   return (
     <>
-      <SiteHeader />
-      <main className="flex w-full flex-1 flex-col">
-        <PageHero
-          centered
-          eyebrow="IDENTITY MD HOLDERS · ON-CHAIN RAFFLES · ETHEREUM MAINNET"
-          title="holder-gated raffle harness"
-          description="provably fair drops for Identity MD collectors. connect with privy, enter on-chain, verify any draw yourself."
-        />
-        <PageBody flush>
-          <div className="border-b border-black py-10">
-            <AsciiOrb />
+      <main className="imd-hero">
+        <div className="imd-hero-body">
+          <SiteHeader />
+
+          <div className="imd-hero-copy imd-hero-copy-center">
+            <p className="imd-eyebrow">
+              provably fair holder drops · chainlink vrf · ethereum mainnet
+            </p>
+            <h1 className="imd-headline">identity draw</h1>
           </div>
+
+          <BowlAnimation />
+
           <Suspense
             fallback={
-              <div className="imd-panel-grid cols-3 grid-cols-1">
+              <div className="imd-stats">
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="min-h-[140px] animate-pulse bg-neutral-50" />
+                  <div key={i} className="imd-card min-h-[140px] animate-pulse bg-neutral-50" />
                 ))}
               </div>
             }
           >
-            <div className="imd-panel-grid cols-3 grid-cols-1">
-              <HomeStats />
-            </div>
+            <HomeStatsPanel />
           </Suspense>
-        </PageBody>
+        </div>
       </main>
       <SiteFooter />
     </>

@@ -262,6 +262,29 @@ export function slugifyTitle(title: string): string {
     .slice(0, 40) || "raffle";
 }
 
+export function buildEntriesCsv(data: RaffleExportRow): string {
+  return rowsToCsv(
+    ["raffle_id", "raffle_title", "entry_index", "wallet_address", "exported_at_unix"],
+    data.entries.map((wallet, index) => [
+      String(data.raffleId),
+      data.title,
+      String(index + 1),
+      wallet,
+      String(Math.floor(Date.now() / 1000)),
+    ])
+  );
+}
+
+export async function exportRaffleEntriesCsv(raffleId: number, title: string) {
+  const data = await fetchRaffleExportData(raffleId);
+  if (data.entries.length === 0) {
+    throw new Error("No entries to export yet");
+  }
+  const csv = buildEntriesCsv(data);
+  const slug = slugifyTitle(title);
+  downloadTextFile(`imd-raffle-${raffleId}-${slug}-entries.csv`, csv);
+}
+
 export async function exportRaffleWinnersCsv(raffleId: number, title: string) {
   const data = await fetchRaffleExportData(raffleId);
   if (data.status !== RaffleStatus.Closed || data.winners.length === 0) {

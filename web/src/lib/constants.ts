@@ -1,4 +1,6 @@
 export const SITE_NAME = "Identity Draw";
+/** Short mark for the nav pill (like imd.fun uses "IMD"). */
+export const SITE_NAV_MARK = "DRAW";
 
 export const IDENTITY_MD_ADDRESS =
   "0x0000eC93127BAA929E58E97dd0095A2BFb38ec1D" as const;

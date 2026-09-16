@@ -10,7 +10,7 @@ export default function VerifyPage() {
         <PageHero
           eyebrow="VERIFY"
           title="on-chain proof"
-          description="audit any raffle by id. the flow bar shows progress — once closed, you can replay vrf + winner math and confirm it matches on-chain."
+          description="audit any raffle by id — entries, vrf seed, and winners read straight from the contract."
         />
         <PageBody flush>
           <Suspense

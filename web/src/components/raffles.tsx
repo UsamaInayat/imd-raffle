@@ -5,8 +5,7 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePrivy } from "@privy-io/react-auth";
 import { RaffleCarousel } from "@/components/raffle-carousel";
-import { RaffleFlowSteps, RaffleHowItWorks } from "@/components/raffle-flow";
-import { StatCard } from "@/components/layout";
+import { RaffleHowItWorks } from "@/components/raffle-flow";
 import {
   useContractRead,
   useContractWrite,
@@ -198,13 +197,9 @@ function RaffleCard({
 
   return (
     <article
-      className="imd-fade-in flex h-full flex-col p-6"
+      className="imd-box imd-fade-in flex h-full flex-col p-5"
       style={{ animationDelay: `${index * 60}ms` }}
     >
-      <div className="mb-4">
-        <RaffleFlowSteps status={raffle.status} isOpen={isOpen} compact />
-      </div>
-
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[10px] uppercase tracking-[0.15em] text-neutral-500">
@@ -348,11 +343,15 @@ export function RaffleGrid() {
 
   if (raffles.length === 0) {
     return (
-      <div className="imd-stack">
-        <RaffleHowItWorks />
-        <div className="p-6 text-center font-mono text-sm">
-          no raffles yet. holders-only drops appear here when created on-chain.
-        </div>
+      <div className="w-full">
+        <section className="border-b border-black px-6 py-6 sm:px-8 md:px-10">
+          <RaffleHowItWorks />
+        </section>
+        <section className="px-6 py-8 sm:px-8 md:px-10">
+          <div className="imd-box mx-auto max-w-md p-6 text-center font-mono text-sm">
+            no raffles yet. holders-only drops appear here when created on-chain.
+          </div>
+        </section>
       </div>
     );
   }
@@ -362,54 +361,28 @@ export function RaffleGrid() {
   );
 
   return (
-    <div className="imd-stack">
-      <RaffleHowItWorks />
+    <div className="w-full">
+      <section className="border-b border-black px-6 py-6 sm:px-8 md:px-10">
+        <RaffleHowItWorks />
+      </section>
+      <section className="px-6 py-8 sm:px-8 md:px-10">
+        {raffles.length === 1 ? (
+          <div className="mx-auto w-full max-w-md">{renderCard(raffles[0], 0)}</div>
+        ) : null}
 
-      {raffles.length === 1 ? renderCard(raffles[0], 0) : null}
+        {raffles.length === 2 ? (
+          <div className="mx-auto grid w-full max-w-3xl gap-4 sm:grid-cols-2">
+            {raffles.map((raffle, index) => renderCard(raffle, index))}
+          </div>
+        ) : null}
 
-      {raffles.length === 2 ? (
-        <div className="imd-panel-grid cols-2 grid-cols-1">
-          {raffles.map((raffle, index) => renderCard(raffle, index))}
-        </div>
-      ) : null}
-
-      {raffles.length >= 3 ? (
-        <div className="p-6 sm:p-8">
-          <RaffleCarousel raffles={raffles} renderCard={renderCard} />
-        </div>
-      ) : null}
+        {raffles.length >= 3 ? (
+          <div className="mx-auto w-full max-w-4xl">
+            <RaffleCarousel raffles={raffles} renderCard={renderCard} />
+          </div>
+        ) : null}
+      </section>
     </div>
   );
 }
 
-export function HomeStats() {
-  const stats = useRaffleStats();
-  return (
-    <>
-      <StatCard
-        label="ACTIVE RAFFLES"
-        value={stats.active}
-        sub="open holder-gated drops · ethereum mainnet"
-        progress={{
-          pct: stats.activePct,
-          bar: progressBar(stats.active, Math.max(stats.total, 1)),
-        }}
-      />
-      <StatCard
-        label="TOTAL ENTRIES"
-        tag={stats.total === 0 ? "EMPTY" : "LIVE"}
-        value={stats.entries.toString()}
-        sub="on-chain entries · verifiable by anyone"
-      />
-      <StatCard
-        label="FINALIZED"
-        value={stats.closed.toString()}
-        sub={`${stats.total} total raffles · provably fair draw`}
-        progress={{
-          pct: stats.closedPct,
-          bar: progressBar(stats.closed, Math.max(stats.total, 1)),
-        }}
-      />
-    </>
-  );
-}

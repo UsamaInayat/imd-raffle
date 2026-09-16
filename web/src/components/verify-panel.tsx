@@ -1,7 +1,6 @@
 "use client";
 
 import { useSearchParams } from "next/navigation";
-import { RaffleFlowSteps } from "@/components/raffle-flow";
 import { useContractRead } from "@/hooks/use-chain";
 import {
   formatStatus,
@@ -60,23 +59,28 @@ export function VerifyPanel() {
 
   if (!RAFFLE_CONTRACT_ADDRESS || RAFFLE_CONTRACT_ADDRESS.endsWith("0000")) {
     return (
-      <div className="imd-stack p-6 font-mono text-sm">
-        contract address not configured.
+      <div className="mx-auto max-w-3xl px-6 py-8">
+        <div className="imd-box p-6 font-mono text-sm">
+          contract address not configured.
+        </div>
       </div>
     );
   }
 
   if (raffleLoading && !raffle) {
     return (
-      <div className="imd-stack p-6 font-mono text-sm opacity-60">
-        loading raffle #{raffleId}…
+      <div className="mx-auto max-w-3xl px-6 py-8">
+        <div className="imd-box p-6 font-mono text-sm opacity-60">
+          loading raffle #{raffleId}…
+        </div>
       </div>
     );
   }
 
   if (raffleError || !raffle) {
     return (
-      <div className="imd-stack p-6 font-mono text-sm">
+      <div className="mx-auto max-w-3xl px-6 py-8">
+      <div className="imd-box p-6 font-mono text-sm">
         <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
           NOT FOUND
         </p>
@@ -90,6 +94,7 @@ export function VerifyPanel() {
         {raffleError ? (
           <p className="mt-3 text-xs text-red-600">{raffleError}</p>
         ) : null}
+      </div>
       </div>
     );
   }
@@ -110,24 +115,9 @@ export function VerifyPanel() {
     [] as readonly `0x${string}`[],
   ];
 
-  const isOpen =
-    status === RaffleStatus.Open && Number(endsAt) > Math.floor(Date.now() / 1000);
-
   return (
-    <div className="imd-stack">
-      <div className="imd-fade-in p-6 sm:p-8">
-        <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
-          what this page does
-        </p>
-        <RaffleFlowSteps status={status as RaffleStatus} isOpen={isOpen} />
-        <p className="mt-3 font-mono text-xs leading-relaxed text-neutral-600">
-          this is the audit view. every entry, vrf seed, and winner is read straight
-          from the contract — no backend, no trust. replay the math yourself once
-          status = closed.
-        </p>
-      </div>
-
-      <div className="imd-fade-in p-6 sm:p-8" style={{ animationDelay: "80ms" }}>
+    <div className="mx-auto w-full max-w-3xl space-y-4 px-6 py-8 sm:px-8">
+      <div className="imd-box imd-fade-in p-6">
         <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
           RAFFLE #{raffleId}
         </p>
@@ -177,7 +167,7 @@ export function VerifyPanel() {
         </dl>
       </div>
 
-      <div className="p-6 sm:p-8">
+      <div className="imd-box p-6">
         <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
           ON-CHAIN ENTRIES
         </p>
@@ -194,7 +184,7 @@ export function VerifyPanel() {
       </div>
 
       {status === RaffleStatus.Closed && (eligible ?? []).length > 0 ? (
-        <div className="p-6 sm:p-8">
+        <div className="imd-box p-6">
           <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
             ELIGIBLE AT DRAW (STILL HELD IDMD)
           </p>
@@ -207,7 +197,7 @@ export function VerifyPanel() {
       ) : null}
 
       {status === RaffleStatus.Closed ? (
-        <div className="p-6 sm:p-8">
+        <div className="imd-box p-6">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
               VERIFICATION
@@ -263,7 +253,7 @@ export function VerifyPanel() {
           </div>
         </div>
       ) : (
-        <div className="imd-fade-in p-6 font-mono text-sm text-neutral-600 sm:p-8">
+        <div className="imd-box p-6 font-mono text-sm text-neutral-600">
           <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
             waiting for draw
           </p>
