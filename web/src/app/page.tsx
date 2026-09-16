@@ -12,7 +12,7 @@ export default function HomePage() {
 
           <div className="imd-hero-copy imd-hero-copy-center">
             <p className="imd-eyebrow">
-              onchain verifiable identity based lucky draws
+              onchain verifiable probability machine
             </p>
             <h1 className="imd-headline">identity draw</h1>
           </div>

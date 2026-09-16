@@ -2,18 +2,8 @@
 
 import { useRaffleStats } from "@/components/raffles";
 
-function imdBar(pct: number, width = 40) {
-  const count = Math.round(Math.min(100, Math.max(0, pct)) / 100 * width);
-  return {
-    filled: "=".repeat(count),
-    empty: "·".repeat(Math.max(0, width - count)),
-    pct,
-  };
-}
-
 export function HomeStatsPanel() {
   const stats = useRaffleStats();
-  const activeBar = imdBar(stats.activePct);
   const liveTag = stats.total === 0 ? "EMPTY" : stats.active > 0 ? "LIVE" : "IDLE";
 
   return (
@@ -26,11 +16,9 @@ export function HomeStatsPanel() {
             <span className="imd-figure-of">/ {stats.total} on-chain</span>
           </div>
         </div>
-        <pre className="imd-bar">
-          [<b>{activeBar.filled}</b>
-          {activeBar.empty}] {activeBar.pct.toFixed(1)}%{"\n"}open holder-gated drops · ethereum
-          mainnet
-        </pre>
+        <p className="imd-card-foot">
+          open holder-gated drops · ethereum mainnet
+        </p>
       </div>
 
       <div className="imd-card">
@@ -44,12 +32,9 @@ export function HomeStatsPanel() {
             <span className="imd-figure-of">wallet signatures · gas only</span>
           </div>
         </div>
-        <pre className="imd-bar">
-          [<b>{stats.entries > 0 ? "=" : ""}</b>
-          {"·".repeat(stats.entries > 0 ? 39 : 40)}]{" "}
-          {stats.entries > 0 ? "live" : "0%"}
-          {"\n"}on-chain entries · verifiable by anyone
-        </pre>
+        <p className="imd-card-foot">
+          on-chain entries · verifiable by anyone
+        </p>
       </div>
 
       <div className="imd-card">
@@ -63,10 +48,9 @@ export function HomeStatsPanel() {
             <span className="imd-figure-of">draws finalized</span>
           </div>
         </div>
-        <pre className="imd-bar">
-          {stats.active} open · {stats.entries} entries collected{"\n"}
-          chainlink vrf · verifiable on-chain
-        </pre>
+        <p className="imd-card-foot">
+          {stats.active} open · {stats.entries} entries collected · chainlink vrf
+        </p>
       </div>
     </div>
   );

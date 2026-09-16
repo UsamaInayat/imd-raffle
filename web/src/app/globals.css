@@ -194,81 +194,50 @@ a {
 .imd-hero .imd-nav,
 .imd-hero-copy,
 .imd-stats,
-.imd-lucky-machine {
+.imd-bowl-jar {
   position: relative;
   z-index: 1;
 }
 
-/* — lucky draw machine (hero) — */
+/* — minimalist bowl jar (hero) — */
 
-.imd-lucky-machine {
+.imd-bowl-jar {
   display: flex;
   width: 100%;
-  max-width: 520px;
-  flex-direction: column;
-  align-items: center;
-  padding: 8px 16px 24px;
+  max-width: 420px;
+  justify-content: center;
+  padding: 4px 16px 20px;
 }
 
-.imd-lucky-machine-stage {
-  width: 100%;
-  max-width: 480px;
-  cursor: default;
-}
-
-.imd-lucky-machine-canvas {
+.imd-bowl-jar-canvas {
   display: block;
   width: 100%;
   height: auto;
-  aspect-ratio: 480 / 620;
-}
-
-.imd-lucky-machine-controls {
-  display: flex;
-  width: 100%;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-  margin-top: 4px;
-}
-
-.imd-lucky-machine-hint,
-.imd-lucky-machine-result {
-  margin: 0;
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: #555;
-}
-
-.imd-lucky-machine-result strong {
-  font-weight: 700;
-  color: #000;
+  aspect-ratio: 420 / 520;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .imd-lucky-machine-canvas {
-    opacity: 0.95;
+  .imd-bowl-jar-canvas {
+    opacity: 0.92;
   }
 }
 
 /* — stats cards (imd.fun) — */
 
 .imd-stats {
-  display: flex;
-  flex-wrap: wrap;
-  align-items: stretch;
-  justify-content: center;
-  align-self: stretch;
+  display: grid;
+  width: 100%;
+  max-width: 1080px;
+  align-self: center;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 14px;
   padding: 48px 34px 44px;
 }
 
 .imd-card {
   display: flex;
-  width: min(100%, 300px);
   min-width: 0;
-  flex: 0 0 min(100%, 300px);
+  min-height: 168px;
   flex-direction: column;
   border: 1.5px solid #000;
   background: #fff;
@@ -315,20 +284,12 @@ a {
   white-space: nowrap;
 }
 
-.imd-bar {
+.imd-card-foot {
   margin: 0;
   padding: 13px 20px;
-  font-family: inherit;
   font-size: 12.5px;
-  line-height: 1.4;
-  white-space: pre-wrap;
+  line-height: 1.5;
   color: #555;
-  overflow: hidden;
-}
-
-.imd-bar b {
-  color: #000;
-  font-weight: 700;
 }
 
 .imd-tag {
@@ -598,12 +559,12 @@ code {
   }
 
   .imd-stats {
-    padding-top: 12px;
+    grid-template-columns: 1fr;
+    padding: 12px 16px 32px;
   }
 
   .imd-card {
-    flex: 1 1 100%;
-    width: 100%;
+    min-height: 140px;
   }
 
   .imd-ring:nth-child(2) {
