@@ -41,7 +41,7 @@ function ExportButton({
       >
         {loading ? "…" : label}
       </button>
-      {error ? <p className="mt-1 font-mono text-[10px] text-red-600">{error}</p> : null}
+      {error ? <p className="imd-type-meta mt-1 text-red-600">{error}</p> : null}
     </div>
   );
 }
@@ -54,7 +54,7 @@ export function AdminRaffleExports({ raffle }: { raffle: RaffleData }) {
 
   return (
     <div className="space-y-3 border-t border-neutral-200 pt-4">
-      <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
+      <p className="imd-type-label">
         EXPORT
       </p>
       <div className="flex flex-wrap gap-2">
@@ -74,7 +74,7 @@ export function AdminRaffleExports({ raffle }: { raffle: RaffleData }) {
           onClick={() => exportRaffleFullReportCsv(raffle.id, raffle.title)}
         />
       </div>
-      <p className="font-mono text-[10px] text-neutral-500">
+      <p className="imd-type-meta">
         entries: any time · winners &amp; full report: after status = closed
       </p>
     </div>

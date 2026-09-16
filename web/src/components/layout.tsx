@@ -210,7 +210,7 @@ export function PageBody({
 }) {
   return (
     <section
-      className={`w-full flex-1 ${flush ? "" : "px-6 py-8 sm:px-8 md:px-10"}`}
+      className={`w-full flex-1 ${flush ? "" : "imd-section-pad"}`}
     >
       {children}
     </section>

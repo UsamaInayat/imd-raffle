@@ -35,7 +35,7 @@ function drawBall(ctx: CanvasRenderingContext2D, ball: Ball) {
   if (BOWL_CONFIG.showNumbers) {
     const light = isLightFill(ball.fill);
     ctx.fillStyle = light ? C.numberDark : C.numberLight;
-    ctx.font = `500 ${Math.max(5.5, r * 0.95)}px var(--font-geist-mono), monospace`;
+    ctx.font = `500 ${Math.max(5.5, r * 0.95)}px var(--font-mono), monospace`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
     ctx.globalAlpha = 0.55;

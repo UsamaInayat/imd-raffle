@@ -18,7 +18,7 @@ export default async function VerifyRafflePage({
         <PageBody flush>
           <Suspense
             fallback={
-              <div className="imd-stack p-6 font-mono text-sm opacity-60">
+              <div className="imd-stack imd-panel-inner imd-type-sm opacity-60">
                 loading…
               </div>
             }

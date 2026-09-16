@@ -25,17 +25,17 @@ export function AdminRaffleDetail({ raffleId }: { raffleId: number }) {
 
   if (isLoading && !raffle) {
     return (
-      <div className="mx-auto max-w-2xl px-6 py-8">
-        <div className="imd-box p-6 font-mono text-sm opacity-60">loading raffle…</div>
+      <div className="mx-auto max-w-2xl imd-section-pad">
+        <div className="imd-box imd-panel-inner imd-type-sm opacity-60">loading raffle…</div>
       </div>
     );
   }
 
   if (!raffle) {
     return (
-      <div className="mx-auto max-w-2xl px-6 py-8">
-        <div className="imd-box p-6 font-mono text-sm">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
+      <div className="mx-auto max-w-2xl imd-section-pad">
+        <div className="imd-box imd-panel-inner imd-type-sm">
+          <p className="imd-type-label">
             NOT FOUND
           </p>
           <p className="mt-3">raffle #{raffleId} does not exist.</p>
@@ -48,55 +48,55 @@ export function AdminRaffleDetail({ raffleId }: { raffleId: number }) {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 px-6 py-8">
-      <Link href="/admin" className="font-mono text-xs underline">
+    <div className="mx-auto max-w-2xl space-y-4 imd-section-pad">
+      <Link href="/admin" className="imd-type-xs underline">
         ← back to admin
       </Link>
 
-      <article className="imd-box p-6">
+      <article className="imd-box imd-panel-inner">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
+            <p className="imd-type-label">
               RAFFLE #{raffle.id}
             </p>
-            <h1 className="mt-1 font-mono text-xl">{raffle.title}</h1>
+            <h1 className="imd-type-section-title mt-1">{raffle.title}</h1>
           </div>
-          <span className="border border-black px-2 py-0.5 text-[10px] uppercase tracking-wider">
+          <span className="imd-tag">
             {formatStatus(raffle.status)}
           </span>
         </div>
 
         {raffle.description ? (
-          <p className="mt-3 font-mono text-xs leading-relaxed text-neutral-600">
+          <p className="imd-type-xs imd-muted mt-3 leading-relaxed">
             {raffle.description}
           </p>
         ) : null}
 
-        <dl className="mt-4 grid grid-cols-2 gap-3 font-mono text-xs">
+        <dl className="imd-type-xs mt-4 grid grid-cols-2 gap-3">
           <div>
-            <dt className="text-neutral-500">ENTRIES</dt>
+            <dt className="imd-muted">ENTRIES</dt>
             <dd>{raffle.entryCount.toString()}</dd>
           </div>
           <div>
-            <dt className="text-neutral-500">WINNERS</dt>
+            <dt className="imd-muted">WINNERS</dt>
             <dd>{raffle.winnerCount.toString()}</dd>
           </div>
           <div>
-            <dt className="text-neutral-500">ENDS</dt>
+            <dt className="imd-muted">ENDS</dt>
             <dd>{formatEthCountdown(raffle.endsAt, now)}</dd>
           </div>
           <div>
-            <dt className="text-neutral-500">VRF REQUEST</dt>
+            <dt className="imd-muted">VRF REQUEST</dt>
             <dd>{raffle.vrfRequestId > BigInt(0) ? raffle.vrfRequestId.toString() : "—"}</dd>
           </div>
         </dl>
 
         {raffle.status === RaffleStatus.Closed && raffle.winners.length > 0 ? (
           <div className="mt-4 border-t border-neutral-200 pt-4">
-            <p className="text-[10px] uppercase tracking-widest text-neutral-500">
+            <p className="imd-type-label">
               WINNERS
             </p>
-            <ul className="mt-2 space-y-1 font-mono text-xs">
+            <ul className="imd-type-xs mt-2 space-y-1">
               {raffle.winners.map((winner) => (
                 <li key={winner}>{shortAddress(winner)}</li>
               ))}
@@ -142,7 +142,7 @@ export function AdminRaffleDetail({ raffleId }: { raffleId: number }) {
           ) : null}
 
           {raffle.status === RaffleStatus.DrawRequested ? (
-            <span className="font-mono text-xs text-neutral-500">
+            <span className="imd-type-xs imd-muted">
               vrf pending — chainlink will callback automatically
             </span>
           ) : null}
@@ -152,7 +152,7 @@ export function AdminRaffleDetail({ raffleId }: { raffleId: number }) {
           </Link>
         </div>
 
-        {error ? <p className="mt-3 font-mono text-xs text-red-600">{error}</p> : null}
+        {error ? <p className="imd-type-xs mt-3 text-red-600">{error}</p> : null}
 
         <AdminRaffleExports raffle={raffle} />
       </article>

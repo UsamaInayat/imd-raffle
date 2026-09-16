@@ -31,8 +31,8 @@ export function RaffleCarousel({
 
   return (
     <div className="imd-fade-in space-y-3">
-      <div className="flex items-center justify-between gap-3 font-mono text-xs">
-        <p className="text-neutral-500">
+      <div className="flex items-center justify-between gap-3 imd-type-xs">
+        <p className="imd-muted">
           {raffles.length} active drops · swipe or use arrows
         </p>
         <div className="flex gap-2">

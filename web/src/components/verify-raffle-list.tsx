@@ -9,8 +9,8 @@ export function VerifyRaffleList() {
 
   if (!RAFFLE_CONTRACT_ADDRESS || RAFFLE_CONTRACT_ADDRESS.endsWith("0000")) {
     return (
-      <div className="mx-auto max-w-2xl px-6 py-8">
-        <div className="imd-box p-6 font-mono text-sm">
+      <div className="mx-auto max-w-2xl imd-section-pad">
+        <div className="imd-box imd-panel-inner imd-type-sm">
           contract address not configured.
         </div>
       </div>
@@ -19,16 +19,16 @@ export function VerifyRaffleList() {
 
   if (isLoading && raffles.length === 0) {
     return (
-      <div className="mx-auto max-w-2xl px-6 py-8">
-        <div className="imd-box p-6 font-mono text-sm opacity-60">loading raffles…</div>
+      <div className="mx-auto max-w-2xl imd-section-pad">
+        <div className="imd-box imd-panel-inner imd-type-sm opacity-60">loading raffles…</div>
       </div>
     );
   }
 
   if (raffles.length === 0) {
     return (
-      <div className="mx-auto max-w-2xl px-6 py-8">
-        <div className="imd-box p-6 font-mono text-sm text-neutral-600">
+      <div className="mx-auto max-w-2xl imd-section-pad">
+        <div className="imd-box imd-panel-inner imd-type-sm imd-muted">
           no raffles on-chain yet.
         </div>
       </div>
@@ -36,23 +36,23 @@ export function VerifyRaffleList() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl px-6 py-8 sm:px-8">
+    <div className="mx-auto w-full max-w-2xl imd-section-pad">
       <div className="space-y-3">
         {raffles.map((raffle) => (
           <Link
             key={raffle.id}
             href={`/verify/${raffle.id}`}
-            className="imd-box imd-fade-in block p-5 font-mono text-xs transition-colors hover:bg-neutral-50"
+            className="imd-box imd-box-pad imd-fade-in block imd-type-xs transition-colors hover:bg-neutral-50"
           >
             <div className="flex flex-wrap items-center justify-between gap-2">
-              <span className="text-sm">
+              <span className="imd-type-sm">
                 #{raffle.id} · {raffle.title}
               </span>
-              <span className="border border-black px-2 py-0.5 text-[10px] uppercase tracking-wider">
+              <span className="imd-tag">
                 {formatStatus(raffle.status)}
               </span>
             </div>
-            <p className="mt-2 text-neutral-600">
+            <p className="imd-muted mt-2">
               {raffle.entryCount.toString()} entries · {raffle.winnerCount.toString()} winner
               slots
             </p>

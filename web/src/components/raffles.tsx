@@ -195,52 +195,52 @@ function RaffleCard({
 
   return (
     <article
-      className="imd-box imd-fade-in flex h-full flex-col p-5"
+      className="imd-box imd-box-pad imd-fade-in flex h-full flex-col"
       style={{ animationDelay: `${index * 60}ms` }}
     >
       <div className="flex items-start justify-between gap-3">
         <div>
-          <p className="text-[10px] uppercase tracking-[0.15em] text-neutral-500">
+          <p className="imd-type-label">
             RAFFLE #{raffle.id}
           </p>
-          <h2 className="mt-1 font-mono text-lg">{raffle.title}</h2>
+          <h2 className="imd-type-card-title mt-1">{raffle.title}</h2>
         </div>
-        <span className="border border-black px-2 py-0.5 text-[10px] uppercase tracking-wider">
+        <span className="imd-tag">
           {formatStatus(raffle.status)}
         </span>
       </div>
 
       {raffle.description ? (
-        <p className="mt-3 font-mono text-xs leading-relaxed text-neutral-600">
+        <p className="imd-type-xs imd-muted mt-3 leading-relaxed">
           {raffle.description}
         </p>
       ) : null}
 
-      <dl className="mt-4 grid grid-cols-2 gap-3 font-mono text-xs">
+      <dl className="imd-type-xs mt-4 grid grid-cols-2 gap-3">
         <div>
-          <dt className="text-neutral-500">WINNERS</dt>
+          <dt className="imd-muted">WINNERS</dt>
           <dd>{raffle.winnerCount.toString()}</dd>
         </div>
         <div>
-          <dt className="text-neutral-500">ENTRIES</dt>
+          <dt className="imd-muted">ENTRIES</dt>
           <dd>{raffle.entryCount.toString()}</dd>
         </div>
         <div>
-          <dt className="text-neutral-500">ENDS</dt>
+          <dt className="imd-muted">ENDS</dt>
           <dd>{formatEthCountdown(raffle.endsAt, now)}</dd>
         </div>
         <div>
-          <dt className="text-neutral-500">YOUR STATUS</dt>
+          <dt className="imd-muted">YOUR STATUS</dt>
           <dd>{hasEntered ? "ENTERED" : address ? "NOT ENTERED" : "—"}</dd>
         </div>
       </dl>
 
-      <div className="mt-3 font-mono text-[10px] text-neutral-500">
+      <div className="imd-type-meta mt-3">
         {progressBar(Number(raffle.entryCount), Number(raffle.winnerCount) * 2)}{" "}
         {Math.min(fillPct, 100).toFixed(0)}% capacity
       </div>
 
-      <p className="mt-3 border border-dashed border-neutral-300 px-2 py-1.5 font-mono text-[10px] leading-relaxed text-neutral-600">
+      <p className="imd-type-meta mt-3 border border-dashed border-neutral-300 px-2 py-1.5 leading-relaxed">
         {actionHint(raffle, now, hasEntered)}
       </p>
 
@@ -277,17 +277,17 @@ function RaffleCard({
       </div>
 
       {isOpen && authenticated && !hasEntered ? (
-        <p className="mt-2 font-mono text-[10px] text-neutral-500">
+        <p className="imd-type-meta mt-2">
           its a gas only transaction
         </p>
       ) : null}
 
       {raffle.status === RaffleStatus.Closed && raffle.winners.length > 0 ? (
         <div className="mt-4 border-t border-neutral-200 pt-3">
-          <p className="text-[10px] uppercase tracking-widest text-neutral-500">
+          <p className="imd-type-label">
             WINNERS
           </p>
-          <ul className="mt-2 space-y-1 font-mono text-xs">
+          <ul className="imd-type-xs mt-2 space-y-1">
             {raffle.winners.map((winner) => (
               <li key={winner}>{shortAddress(winner)}</li>
             ))}
@@ -296,14 +296,14 @@ function RaffleCard({
       ) : null}
 
       {error ? (
-        <p className="mt-3 font-mono text-xs text-red-600">{error}</p>
+        <p className="imd-type-xs mt-3 text-red-600">{error}</p>
       ) : null}
       {txHash ? (
         <a
           href={`https://etherscan.io/tx/${txHash}`}
           target="_blank"
           rel="noreferrer"
-          className="mt-2 font-mono text-[10px] underline"
+          className="imd-type-meta mt-2 underline"
         >
           view tx
         </a>
@@ -326,7 +326,7 @@ export function RaffleGrid() {
 
   if (!RAFFLE_CONTRACT_ADDRESS || RAFFLE_CONTRACT_ADDRESS.endsWith("0000")) {
     return (
-      <div className="imd-stack p-6 text-center font-mono text-sm">
+      <div className="imd-stack imd-panel-inner text-center imd-type-sm">
         Set <code>NEXT_PUBLIC_RAFFLE_CONTRACT_ADDRESS</code> after deploying the
         raffle contract.
       </div>
@@ -335,7 +335,7 @@ export function RaffleGrid() {
 
   if (isLoading && raffles.length === 0) {
     return (
-      <div className="imd-stack p-6 text-center font-mono text-sm opacity-60">
+      <div className="imd-stack imd-panel-inner text-center imd-type-sm opacity-60">
         loading raffles…
       </div>
     );
@@ -343,8 +343,8 @@ export function RaffleGrid() {
 
   if (raffles.length === 0) {
     return (
-      <div className="w-full px-6 py-8 sm:px-8 md:px-10">
-        <div className="imd-box mx-auto max-w-md p-6 text-center font-mono text-sm">
+      <div className="w-full imd-section-pad">
+        <div className="imd-box imd-panel-inner mx-auto max-w-md text-center imd-type-sm">
           no raffles yet. holders-only drops appear here when created on-chain.
         </div>
       </div>
@@ -356,7 +356,7 @@ export function RaffleGrid() {
   );
 
   return (
-    <div className="w-full px-6 py-8 sm:px-8 md:px-10">
+    <div className="w-full imd-section-pad">
         {raffles.length === 1 ? (
           <div className="mx-auto w-full max-w-md">{renderCard(raffles[0], 0)}</div>
         ) : null}
