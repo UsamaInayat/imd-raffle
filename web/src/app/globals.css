@@ -180,10 +180,7 @@ a {
 .imd-hero {
   position: relative;
   display: flex;
-  min-height: min(900px, 100vh);
-  min-height: min(900px, 100svh);
   flex-direction: column;
-  overflow: hidden;
 }
 
 .imd-hero-body {
@@ -196,117 +193,63 @@ a {
 
 .imd-hero .imd-nav,
 .imd-hero-copy,
-.imd-stats {
+.imd-stats,
+.imd-lucky-machine {
   position: relative;
   z-index: 1;
 }
 
-.imd-bowl-stage {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  overflow: hidden;
-  pointer-events: none;
-  user-select: none;
-}
+/* — lucky draw machine (hero) — */
 
-.imd-bowl-canvas {
-  position: absolute;
-  inset: 0;
-  z-index: 2;
+.imd-lucky-machine {
+  display: flex;
   width: 100%;
-  height: 100%;
+  max-width: 520px;
+  flex-direction: column;
+  align-items: center;
+  padding: 8px 16px 24px;
 }
 
-.imd-rings {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  opacity: 0.55;
-  pointer-events: none;
+.imd-lucky-machine-stage {
+  width: 100%;
+  max-width: 480px;
+  cursor: default;
 }
 
-.imd-ring,
-.imd-core {
-  position: absolute;
-  left: 50%;
-  top: 48%;
+.imd-lucky-machine-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  aspect-ratio: 480 / 620;
+}
+
+.imd-lucky-machine-controls {
+  display: flex;
+  width: 100%;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.imd-lucky-machine-hint,
+.imd-lucky-machine-result {
   margin: 0;
-  white-space: pre;
-  font-family: inherit;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #555;
 }
 
-.imd-ring {
-  font-size: 13px;
-  line-height: 1.3;
-  animation: imd-ring-in 1.6s linear infinite backwards;
+.imd-lucky-machine-result strong {
+  font-weight: 700;
+  color: #000;
 }
 
-.imd-ring:nth-child(2) {
-  animation-delay: 0.4s;
-}
-
-.imd-ring:nth-child(3) {
-  animation-delay: 0.8s;
-}
-
-.imd-ring:nth-child(4) {
-  animation-delay: 1.2s;
-}
-
-.imd-core {
-  z-index: 1;
-  font-size: 14px;
-  line-height: 1.25;
-  animation: imd-core-pulse 2.4s ease-in-out infinite;
-}
-
-@keyframes imd-ring-in {
-  0% {
-    transform: translate(-50%, -50%) scale(2.2);
-    opacity: 0;
+@media (prefers-reduced-motion: reduce) {
+  .imd-lucky-machine-canvas {
+    opacity: 0.95;
   }
-  60% {
-    opacity: 0.85;
-  }
-  100% {
-    transform: translate(-50%, -50%) scale(0.4);
-    opacity: 0;
-  }
-}
-
-@keyframes imd-core-pulse {
-  0%,
-  100% {
-    transform: translate(-50%, -50%) scale(1);
-    opacity: 0.9;
-  }
-  50% {
-    transform: translate(-50%, -50%) scale(1.12);
-    opacity: 0.6;
-  }
-}
-
-.imd-hero-fade-top {
-  position: absolute;
-  inset: 0;
-  z-index: 3;
-  background: radial-gradient(
-    42% 14% at 50% 20%,
-    hsla(0, 0%, 100%, 0.95) 0%,
-    hsla(0, 0%, 100%, 0.5) 66%,
-    hsla(0, 0%, 100%, 0) 100%
-  );
-}
-
-.imd-hero-fade-bottom {
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 3;
-  height: 240px;
-  background: linear-gradient(180deg, hsla(0, 0%, 100%, 0), hsla(0, 0%, 100%, 0.96));
 }
 
 /* — stats cards (imd.fun) — */
@@ -315,25 +258,20 @@ a {
   display: flex;
   flex-wrap: wrap;
   align-items: stretch;
+  justify-content: center;
   align-self: stretch;
   gap: 14px;
-  margin-top: auto;
   padding: 48px 34px 44px;
 }
 
 .imd-card {
   display: flex;
+  width: min(100%, 300px);
   min-width: 0;
-  flex: 0 1 470px;
+  flex: 0 0 min(100%, 300px);
   flex-direction: column;
   border: 1.5px solid #000;
   background: #fff;
-}
-
-.imd-card-wide {
-  flex: 1 1 220px;
-  gap: 7px;
-  padding: 15px 20px;
 }
 
 .imd-card-head {
@@ -391,11 +329,6 @@ a {
 .imd-bar b {
   color: #000;
   font-weight: 700;
-}
-
-.imd-card-lines {
-  font-size: 11.5px;
-  line-height: 1.8;
 }
 
 .imd-tag {
@@ -664,48 +597,13 @@ code {
     gap: 10px;
   }
 
-  .imd-bowl-stage {
-    position: relative;
-    inset: auto;
-    width: 100%;
-    height: 280px;
-    margin-top: 12px;
-  }
-
-  .imd-ring,
-  .imd-core {
-    top: 50%;
-  }
-
-  .imd-hero-fade-top {
-    display: none;
-  }
-
-  .imd-hero-fade-bottom {
-    height: 80px;
-  }
-
   .imd-stats {
     padding-top: 12px;
   }
 
-  .imd-card,
-  .imd-card-wide {
+  .imd-card {
     flex: 1 1 100%;
-  }
-
-  .imd-ring,
-  .imd-core {
-    animation: none;
-  }
-
-  .imd-core {
-    transform: translate(-50%, -50%);
-  }
-
-  .imd-ring {
-    opacity: 0.35;
-    transform: translate(-50%, -50%) scale(0.8);
+    width: 100%;
   }
 
   .imd-ring:nth-child(2) {

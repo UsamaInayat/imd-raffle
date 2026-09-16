@@ -19,15 +19,14 @@ const config: HardhatUserConfig = {
   },
   networks: {
     hardhat: {},
-    ...(mainnetRpcUrl && deployerKey
-      ? {
-          mainnet: {
-            url: mainnetRpcUrl,
-            accounts: [deployerKey],
-            chainId: 1,
-          },
-        }
-      : {}),
+    mainnet: {
+      url: mainnetRpcUrl ?? "https://ethereum.publicnode.com",
+      chainId: 1,
+      ...(deployerKey ? { accounts: [deployerKey] } : {}),
+    },
+  },
+  etherscan: {
+    apiKey: process.env.ETHERSCAN_API_KEY,
   },
 };
 

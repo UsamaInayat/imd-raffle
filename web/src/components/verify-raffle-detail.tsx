@@ -1,6 +1,6 @@
 "use client";
 
-import { useSearchParams } from "next/navigation";
+import Link from "next/link";
 import { useContractRead } from "@/hooks/use-chain";
 import {
   formatStatus,
@@ -21,10 +21,7 @@ type RaffleTuple = readonly [
   readonly `0x${string}`[],
 ];
 
-export function VerifyPanel() {
-  const params = useSearchParams();
-  const raffleId = Number(params.get("id") ?? "0");
-
+export function VerifyRaffleDetail({ raffleId }: { raffleId: number }) {
   const {
     data: raffle,
     isLoading: raffleLoading,
@@ -80,21 +77,18 @@ export function VerifyPanel() {
   if (raffleError || !raffle) {
     return (
       <div className="mx-auto max-w-3xl px-6 py-8">
-      <div className="imd-box p-6 font-mono text-sm">
-        <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
-          NOT FOUND
-        </p>
-        <p className="mt-3">
-          raffle #{raffleId} does not exist on-chain yet.
-        </p>
-        <p className="mt-2 text-neutral-600">
-          create one from <a href="/admin" className="underline">/admin</a>, then
-          verify with <code>?id=0</code> (first raffle is id 0).
-        </p>
-        {raffleError ? (
-          <p className="mt-3 text-xs text-red-600">{raffleError}</p>
-        ) : null}
-      </div>
+        <div className="imd-box p-6 font-mono text-sm">
+          <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
+            NOT FOUND
+          </p>
+          <p className="mt-3">raffle #{raffleId} does not exist on-chain yet.</p>
+          <Link href="/verify" className="imd-btn imd-btn-sm mt-4 inline-flex">
+            BACK TO VERIFY
+          </Link>
+          {raffleError ? (
+            <p className="mt-3 text-xs text-red-600">{raffleError}</p>
+          ) : null}
+        </div>
       </div>
     );
   }
@@ -117,6 +111,13 @@ export function VerifyPanel() {
 
   return (
     <div className="mx-auto w-full max-w-3xl space-y-4 px-6 py-8 sm:px-8">
+      <Link
+        href="/verify"
+        className="inline-block font-mono text-[10px] uppercase tracking-widest text-neutral-500 underline"
+      >
+        ← all raffles
+      </Link>
+
       <div className="imd-box imd-fade-in p-6">
         <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
           RAFFLE #{raffleId}
@@ -169,11 +170,11 @@ export function VerifyPanel() {
 
       <div className="imd-box p-6">
         <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
-          ON-CHAIN ENTRIES
+          ON-CHAIN ENTRIES ({entries?.length ?? 0})
         </p>
-        <ul className="mt-4 max-h-64 space-y-1 overflow-y-auto font-mono text-xs">
+        <ul className="mt-4 space-y-1 font-mono text-xs">
           {(entries ?? []).map((entry, i) => (
-            <li key={`${entry}-${i}`}>
+            <li key={`${entry}-${i}`} className="break-all">
               {i + 1}. {entry}
             </li>
           ))}
@@ -186,11 +187,13 @@ export function VerifyPanel() {
       {status === RaffleStatus.Closed && (eligible ?? []).length > 0 ? (
         <div className="imd-box p-6">
           <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
-            ELIGIBLE AT DRAW (STILL HELD IDMD)
+            ELIGIBLE AT DRAW ({eligible?.length ?? 0})
           </p>
           <ul className="mt-4 space-y-1 font-mono text-xs">
             {(eligible ?? []).map((entry, i) => (
-              <li key={`${entry}-${i}`}>{i + 1}. {entry}</li>
+              <li key={`${entry}-${i}`} className="break-all">
+                {i + 1}. {entry}
+              </li>
             ))}
           </ul>
         </div>
@@ -258,8 +261,8 @@ export function VerifyPanel() {
             waiting for draw
           </p>
           <p className="mt-3">
-            proof unlocks when status = closed. right now you can still inspect
-            entries and on-chain metadata above.
+            proof unlocks when status = closed. entries and metadata above stay readable
+            on this page as the list grows.
           </p>
         </div>
       )}

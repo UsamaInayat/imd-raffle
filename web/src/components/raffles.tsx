@@ -2,10 +2,8 @@
 
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { usePrivy } from "@privy-io/react-auth";
 import { RaffleCarousel } from "@/components/raffle-carousel";
-import { RaffleHowItWorks } from "@/components/raffle-flow";
 import {
   useContractRead,
   useContractWrite,
@@ -162,7 +160,7 @@ function actionHint(raffle: RaffleData, now: number, hasEntered?: boolean): stri
   if (raffle.status === RaffleStatus.DrawRequested) return "chainlink vrf is picking winners…";
   if (Number(raffle.endsAt) <= now) return "raffle ended — request vrf draw";
   if (hasEntered) return "you're in — wait for the timer to end";
-  return "connect wallet → enter raffle (gas only)";
+  return "connect wallet to enter";
 }
 
 function RaffleCard({
@@ -276,11 +274,13 @@ function RaffleCard({
             VRF PENDING…
           </span>
         ) : null}
-
-        <Link href={`/verify?id=${raffle.id}`} className="imd-btn imd-btn-sm">
-          VERIFY
-        </Link>
       </div>
+
+      {isOpen && authenticated && !hasEntered ? (
+        <p className="mt-2 font-mono text-[10px] text-neutral-500">
+          its a gas only transaction
+        </p>
+      ) : null}
 
       {raffle.status === RaffleStatus.Closed && raffle.winners.length > 0 ? (
         <div className="mt-4 border-t border-neutral-200 pt-3">
@@ -343,15 +343,10 @@ export function RaffleGrid() {
 
   if (raffles.length === 0) {
     return (
-      <div className="w-full">
-        <section className="border-b border-black px-6 py-6 sm:px-8 md:px-10">
-          <RaffleHowItWorks />
-        </section>
-        <section className="px-6 py-8 sm:px-8 md:px-10">
-          <div className="imd-box mx-auto max-w-md p-6 text-center font-mono text-sm">
-            no raffles yet. holders-only drops appear here when created on-chain.
-          </div>
-        </section>
+      <div className="w-full px-6 py-8 sm:px-8 md:px-10">
+        <div className="imd-box mx-auto max-w-md p-6 text-center font-mono text-sm">
+          no raffles yet. holders-only drops appear here when created on-chain.
+        </div>
       </div>
     );
   }
@@ -361,11 +356,7 @@ export function RaffleGrid() {
   );
 
   return (
-    <div className="w-full">
-      <section className="border-b border-black px-6 py-6 sm:px-8 md:px-10">
-        <RaffleHowItWorks />
-      </section>
-      <section className="px-6 py-8 sm:px-8 md:px-10">
+    <div className="w-full px-6 py-8 sm:px-8 md:px-10">
         {raffles.length === 1 ? (
           <div className="mx-auto w-full max-w-md">{renderCard(raffles[0], 0)}</div>
         ) : null}
@@ -381,7 +372,6 @@ export function RaffleGrid() {
             <RaffleCarousel raffles={raffles} renderCard={renderCard} />
           </div>
         ) : null}
-      </section>
     </div>
   );
 }

@@ -1,27 +1,20 @@
-import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { PageBody, PageHero, SiteFooter, SiteHeader } from "@/components/layout";
-import { VerifyRaffleList } from "@/components/verify-raffle-list";
+import { VerifyRaffleDetail } from "@/components/verify-raffle-detail";
 
-export default async function VerifyPage({
-  searchParams,
+export default async function VerifyRafflePage({
+  params,
 }: {
-  searchParams: Promise<{ id?: string }>;
+  params: Promise<{ id: string }>;
 }) {
-  const { id } = await searchParams;
-  if (id !== undefined && id !== "") {
-    redirect(`/verify/${id}`);
-  }
+  const { id } = await params;
+  const raffleId = Number(id);
 
   return (
     <>
       <SiteHeader />
       <main className="flex w-full flex-1 flex-col">
-        <PageHero
-          eyebrow="VERIFY"
-          title="public record"
-          description="pick a draw to see who entered and who won."
-        />
+        <PageHero eyebrow="VERIFY" title={`raffle #${id}`} />
         <PageBody flush>
           <Suspense
             fallback={
@@ -30,7 +23,7 @@ export default async function VerifyPage({
               </div>
             }
           >
-            <VerifyRaffleList />
+            <VerifyRaffleDetail raffleId={raffleId} />
           </Suspense>
         </PageBody>
       </main>

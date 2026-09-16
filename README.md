@@ -34,6 +34,16 @@ VRF_SUBSCRIPTION_ID=123 npx hardhat run scripts/deploy.ts --network mainnet
 # Then add contract as VRF consumer at https://vrf.chain.link
 ```
 
+### Verify on Etherscan
+
+```bash
+# Manual: export Standard JSON + constructor args for the web form
+npm run etherscan:export
+
+# Automated (requires ETHERSCAN_API_KEY in root .env)
+npm run verify:mainnet
+```
+
 ### Frontend
 
 ```bash
@@ -61,7 +71,8 @@ npm run dev
 |-------|--------|---------|
 | `/` | Public | Landing + stats |
 | `/raffles` | IDMD holders | Enter raffles (signed tx) |
-| `/verify?id=N` | Public | Verify draw proof |
+| `/verify` | Public | List raffles for audit |
+| `/verify/[id]` | Public | Verify draw proof for one raffle |
 | `/admin` | IDMD + admin | Create raffles, manage admins, **export winners CSV** |
 | `/api/health` | Public | Railway healthcheck |
 

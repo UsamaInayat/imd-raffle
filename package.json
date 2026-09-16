@@ -10,6 +10,8 @@
     "compile": "hardhat compile",
     "test": "hardhat test",
     "deploy:local": "hardhat run scripts/deploy.ts --network hardhat",
+    "verify:mainnet": "hardhat run scripts/verify.ts --network mainnet",
+    "etherscan:export": "hardhat run scripts/export-etherscan-input.ts",
     "dev": "npm run dev --prefix web",
     "build": "npm run build --prefix web",
     "lint": "npm run lint --prefix web"

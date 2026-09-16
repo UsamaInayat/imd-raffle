@@ -147,7 +147,7 @@ export function AdminRaffleDetail({ raffleId }: { raffleId: number }) {
             </span>
           ) : null}
 
-          <Link href={`/verify?id=${raffle.id}`} className="imd-btn imd-btn-sm">
+          <Link href={`/verify/${raffle.id}`} className="imd-btn imd-btn-sm">
             VERIFY
           </Link>
         </div>

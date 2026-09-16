@@ -142,7 +142,7 @@ export function SiteFooter() {
             </dd>
             <dt>verify</dt>
             <dd>
-              <Link href="/verify">audit any draw</Link>
+              <Link href="/verify">check any draw</Link>
             </dd>
             {contractHref ? (
               <>

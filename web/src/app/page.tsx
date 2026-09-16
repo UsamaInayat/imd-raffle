@@ -1,6 +1,6 @@
 import { Suspense } from "react";
-import { BowlAnimation } from "@/components/bowl-animation";
 import { HomeStatsPanel } from "@/components/home-stats";
+import { LuckyDrawMachine } from "@/components/lucky-draw-machine";
 import { SiteFooter, SiteHeader } from "@/components/layout";
 
 export default function HomePage() {
@@ -12,12 +12,12 @@ export default function HomePage() {
 
           <div className="imd-hero-copy imd-hero-copy-center">
             <p className="imd-eyebrow">
-              provably fair holder drops · chainlink vrf · ethereum mainnet
+              onchain verifiable identity based lucky draws
             </p>
             <h1 className="imd-headline">identity draw</h1>
           </div>
 
-          <BowlAnimation />
+          <LuckyDrawMachine />
 
           <Suspense
             fallback={
