@@ -1,40 +1,42 @@
 import { Suspense } from "react";
-import { AsciiOrb, SiteFooter, SiteHeader } from "@/components/layout";
+import {
+  AsciiOrb,
+  PageBody,
+  PageHero,
+  SiteFooter,
+  SiteHeader,
+} from "@/components/layout";
 import { HomeStats } from "@/components/raffles";
 
 export default function HomePage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto w-full max-w-5xl flex-1 px-4 py-10">
-        <p className="text-center text-[10px] uppercase tracking-[0.25em] text-neutral-500">
-          IDENTITY MD HOLDERS · ON-CHAIN RAFFLES · ETHEREUM MAINNET
-        </p>
-        <h1 className="mt-6 text-center font-mono text-3xl sm:text-4xl">
-          holder-gated raffle harness
-        </h1>
-        <p className="mx-auto mt-4 max-w-xl text-center font-mono text-sm text-neutral-600">
-          provably fair drops for Identity MD collectors. connect with privy,
-          enter on-chain, verify any draw yourself.
-        </p>
-
-        <div className="my-10">
-          <AsciiOrb />
-        </div>
-
-        <Suspense
-          fallback={
-            <div className="grid gap-4 md:grid-cols-3">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="imd-box h-36 animate-pulse" />
-              ))}
-            </div>
-          }
-        >
-          <div className="grid gap-4 md:grid-cols-3">
-            <HomeStats />
+      <main className="flex w-full flex-1 flex-col">
+        <PageHero
+          centered
+          eyebrow="IDENTITY MD HOLDERS · ON-CHAIN RAFFLES · ETHEREUM MAINNET"
+          title="holder-gated raffle harness"
+          description="provably fair drops for Identity MD collectors. connect with privy, enter on-chain, verify any draw yourself."
+        />
+        <PageBody flush>
+          <div className="border-b border-black py-10">
+            <AsciiOrb />
           </div>
-        </Suspense>
+          <Suspense
+            fallback={
+              <div className="imd-panel-grid cols-3 grid-cols-1">
+                {[1, 2, 3].map((i) => (
+                  <div key={i} className="min-h-[140px] animate-pulse bg-neutral-50" />
+                ))}
+              </div>
+            }
+          >
+            <div className="imd-panel-grid cols-3 grid-cols-1">
+              <HomeStats />
+            </div>
+          </Suspense>
+        </PageBody>
       </main>
       <SiteFooter />
     </>

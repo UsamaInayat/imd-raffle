@@ -4,6 +4,8 @@ import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { usePrivy } from "@privy-io/react-auth";
+import { RaffleCarousel } from "@/components/raffle-carousel";
+import { RaffleFlowSteps, RaffleHowItWorks } from "@/components/raffle-flow";
 import { StatCard } from "@/components/layout";
 import {
   useContractRead,
@@ -155,7 +157,24 @@ export function useRaffleStats() {
   }, [raffles, total]);
 }
 
-function RaffleCard({ raffle, now }: { raffle: RaffleData; now: number }) {
+function actionHint(raffle: RaffleData, now: number, hasEntered?: boolean): string {
+  if (raffle.status === RaffleStatus.Cancelled) return "cancelled — no further action";
+  if (raffle.status === RaffleStatus.Closed) return "draw complete — view winners or verify proof";
+  if (raffle.status === RaffleStatus.DrawRequested) return "chainlink vrf is picking winners…";
+  if (Number(raffle.endsAt) <= now) return "raffle ended — request vrf draw";
+  if (hasEntered) return "you're in — wait for the timer to end";
+  return "connect wallet → enter raffle (gas only)";
+}
+
+function RaffleCard({
+  raffle,
+  now,
+  index = 0,
+}: {
+  raffle: RaffleData;
+  now: number;
+  index?: number;
+}) {
   const { authenticated } = usePrivy();
   const address = useWalletAddress();
 
@@ -169,15 +188,23 @@ function RaffleCard({ raffle, now }: { raffle: RaffleData; now: number }) {
   const { enter, requestDraw, isPending, error, txHash } =
     useRaffleActions(raffle.id);
 
-  const isOpen =
-    raffle.status === RaffleStatus.Open && Number(raffle.endsAt) > now;
   const fillPct =
     Number(raffle.winnerCount) === 0
       ? 0
       : (Number(raffle.entryCount) / Number(raffle.winnerCount)) * 100;
 
+  const isOpen =
+    raffle.status === RaffleStatus.Open && Number(raffle.endsAt) > now;
+
   return (
-    <article className="imd-box flex flex-col p-4">
+    <article
+      className="imd-fade-in flex h-full flex-col p-6"
+      style={{ animationDelay: `${index * 60}ms` }}
+    >
+      <div className="mb-4">
+        <RaffleFlowSteps status={raffle.status} isOpen={isOpen} compact />
+      </div>
+
       <div className="flex items-start justify-between gap-3">
         <div>
           <p className="text-[10px] uppercase tracking-[0.15em] text-neutral-500">
@@ -219,6 +246,10 @@ function RaffleCard({ raffle, now }: { raffle: RaffleData; now: number }) {
         {progressBar(Number(raffle.entryCount), Number(raffle.winnerCount) * 2)}{" "}
         {Math.min(fillPct, 100).toFixed(0)}% capacity
       </div>
+
+      <p className="mt-3 border border-dashed border-neutral-300 px-2 py-1.5 font-mono text-[10px] leading-relaxed text-neutral-600">
+        {actionHint(raffle, now, hasEntered)}
+      </p>
 
       <div className="mt-4 flex flex-wrap gap-2">
         {isOpen && authenticated ? (
@@ -300,7 +331,7 @@ export function RaffleGrid() {
 
   if (!RAFFLE_CONTRACT_ADDRESS || RAFFLE_CONTRACT_ADDRESS.endsWith("0000")) {
     return (
-      <div className="imd-box p-6 text-center font-mono text-sm">
+      <div className="imd-stack p-6 text-center font-mono text-sm">
         Set <code>NEXT_PUBLIC_RAFFLE_CONTRACT_ADDRESS</code> after deploying the
         raffle contract.
       </div>
@@ -309,7 +340,7 @@ export function RaffleGrid() {
 
   if (isLoading && raffles.length === 0) {
     return (
-      <div className="imd-box p-6 text-center font-mono text-sm opacity-60">
+      <div className="imd-stack p-6 text-center font-mono text-sm opacity-60">
         loading raffles…
       </div>
     );
@@ -317,17 +348,36 @@ export function RaffleGrid() {
 
   if (raffles.length === 0) {
     return (
-      <div className="imd-box p-6 text-center font-mono text-sm">
-        no raffles yet. holders-only drops appear here when created on-chain.
+      <div className="imd-stack">
+        <RaffleHowItWorks />
+        <div className="p-6 text-center font-mono text-sm">
+          no raffles yet. holders-only drops appear here when created on-chain.
+        </div>
       </div>
     );
   }
 
+  const renderCard = (raffle: RaffleData, index: number) => (
+    <RaffleCard key={raffle.id} raffle={raffle} now={now} index={index} />
+  );
+
   return (
-    <div className="grid gap-4 md:grid-cols-2">
-      {raffles.map((raffle) => (
-        <RaffleCard key={raffle.id} raffle={raffle} now={now} />
-      ))}
+    <div className="imd-stack">
+      <RaffleHowItWorks />
+
+      {raffles.length === 1 ? renderCard(raffles[0], 0) : null}
+
+      {raffles.length === 2 ? (
+        <div className="imd-panel-grid cols-2 grid-cols-1">
+          {raffles.map((raffle, index) => renderCard(raffle, index))}
+        </div>
+      ) : null}
+
+      {raffles.length >= 3 ? (
+        <div className="p-6 sm:p-8">
+          <RaffleCarousel raffles={raffles} renderCard={renderCard} />
+        </div>
+      ) : null}
     </div>
   );
 }

@@ -39,7 +39,7 @@ function CreateRaffleForm() {
   }
 
   return (
-    <form onSubmit={handleCreate} className="imd-box space-y-4 p-6">
+    <form onSubmit={handleCreate} className="space-y-4 p-6 sm:p-8">
       <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">CREATE RAFFLE</p>
       <label className="block font-mono text-xs">
         TITLE
@@ -79,13 +79,13 @@ function ManageAdmins() {
 
   if (ownerLoading) {
     return (
-      <div className="imd-box p-6 font-mono text-sm opacity-60">loading owner status…</div>
+      <div className="p-6 font-mono text-sm opacity-60 sm:p-8">loading owner status…</div>
     );
   }
 
   if (!isOwner) {
     return (
-      <div className="imd-box p-6">
+      <div className="p-6 sm:p-8">
         <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">ADMINS</p>
         <p className="mt-3 font-mono text-sm text-neutral-600">only the contract owner can add or remove admins.</p>
         <p className="mt-2 font-mono text-xs">your wallet: {address ? shortAddress(address) : "—"}</p>
@@ -94,7 +94,7 @@ function ManageAdmins() {
   }
 
   return (
-    <div className="imd-box space-y-4 p-6">
+    <div className="space-y-4 p-6 sm:p-8">
       <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">MANAGE ADMINS</p>
       <form
         onSubmit={async (e) => {
@@ -140,11 +140,11 @@ function AdminRaffleList({ raffles, isLoading }: { raffles: ReturnType<typeof us
   const { write, isPending, error } = useContractWrite();
 
   if (isLoading && raffles.length === 0) {
-    return <div className="imd-box p-6 font-mono text-sm opacity-60">loading…</div>;
+    return <div className="p-6 font-mono text-sm opacity-60 sm:p-8">loading…</div>;
   }
 
   return (
-    <div className="imd-box p-6">
+    <div className="p-6 sm:p-8">
       <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">MANAGE RAFFLES</p>
       <div className="mt-4 space-y-3">
         {raffles.map((raffle) => (
@@ -182,11 +182,13 @@ export function AdminPortal() {
   const { raffles, isLoading } = useAllRaffles();
 
   return (
-    <div className="space-y-6">
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="space-y-6">
+    <div className="imd-stack">
+      <div className="grid lg:grid-cols-2">
+        <div className="border-b border-black lg:border-r lg:border-b-0">
           <CreateRaffleForm />
-          <ManageAdmins />
+          <div className="border-t border-black">
+            <ManageAdmins />
+          </div>
         </div>
         <AdminRaffleList raffles={raffles} isLoading={isLoading} />
       </div>

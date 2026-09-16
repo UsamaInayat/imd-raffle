@@ -71,7 +71,7 @@ export function WinnerExportModule({ raffles }: { raffles: RaffleData[] }) {
   );
 
   return (
-    <div className="imd-box space-y-4 p-6">
+    <div className="space-y-4 p-6 sm:p-8">
       <div>
         <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
           WINNERS EXPORT
