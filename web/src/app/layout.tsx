@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { Providers } from "@/components/providers";
+import { SITE_NAME } from "@/lib/constants";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -14,9 +15,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "IMD Raffles",
-  description:
-    "Holder-gated on-chain raffles for Identity MD collectors on Ethereum mainnet.",
+  title: SITE_NAME,
+  description: "On-chain raffles for Identity MD holders.",
 };
 
 export default function RootLayout({

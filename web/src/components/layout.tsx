@@ -3,7 +3,14 @@
 import Link from "next/link";
 import { usePrivy } from "@privy-io/react-auth";
 import { useIsAdmin, useIsHolder, useWalletAddress } from "@/hooks/use-chain";
-import { shortAddress } from "@/lib/constants";
+import {
+  IDENTITY_MD_OPENSEA,
+  RAFFLE_CONTRACT_ADDRESS,
+  SITE_NAME,
+  shortAddress,
+} from "@/lib/constants";
+
+const RAFAEL_URL = "https://rafaelbot.xyz";
 
 function ConnectButton() {
   const { ready, authenticated, login, logout } = usePrivy();
@@ -49,7 +56,7 @@ export function SiteHeader() {
         className="flex w-full flex-wrap items-stretch"
       >
         <Link href="/" className="imd-nav-item imd-nav-logo">
-          <span aria-hidden>◇</span> IMD
+          <span aria-hidden>◇</span> {SITE_NAME}
         </Link>
         <Link href="/raffles" className="imd-nav-item">
           RAFFLES
@@ -79,49 +86,64 @@ export function SiteHeader() {
 }
 
 export function SiteFooter() {
+  const contractHref = RAFFLE_CONTRACT_ADDRESS.endsWith("0000")
+    ? undefined
+    : `https://etherscan.io/address/${RAFFLE_CONTRACT_ADDRESS}`;
+
   return (
-    <footer className="mt-auto w-full border-t border-black">
-      <div className="grid md:grid-cols-2">
-        <div className="border-b border-black p-6 md:border-r md:border-b-0">
-          <div className="imd-box inline-flex items-center gap-2 px-3 py-1 text-sm">
-            <span aria-hidden>◇</span> IMD RAFFLE
-          </div>
-          <p className="mt-4 max-w-md font-mono text-sm leading-relaxed">
-            holder-gated on-chain raffles for Identity MD collectors. provably fair
-            draws with holder re-check at winner selection.
-          </p>
+    <footer className="imd-foot mt-auto w-full">
+      <div className="imd-foot-row">
+        <div className="imd-foot-brand">
+          <Link href="/" className="imd-pill" aria-label={`${SITE_NAME} home`}>
+            <span className="imd-pill-mark" aria-hidden="true">
+              ◇
+            </span>
+            <span className="imd-pill-brand imd-pill-brand-long">{SITE_NAME}</span>
+          </Link>
+          <p className="imd-blurb">on-chain raffles for Identity MD holders</p>
         </div>
-        <div className="p-6">
-          <p className="text-[10px] uppercase tracking-[0.2em] text-neutral-500">
-            LINKS
-          </p>
-          <dl className="mt-3 space-y-2 font-mono text-sm">
-            <div className="flex gap-3">
-              <dt className="text-neutral-500">collection</dt>
-              <dd>
-                <a
-                  href="https://opensea.io/collection/identitymd"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="underline"
-                >
-                  identitymd
-                </a>
-              </dd>
-            </div>
-            <div className="flex gap-3">
-              <dt className="text-neutral-500">main site</dt>
-              <dd>
-                <a href="https://www.imd.fun/" className="underline">
-                  imd.fun
-                </a>
-              </dd>
-            </div>
+        <div className="imd-foot-projects">
+          <div className="imd-foot-label">LINKS</div>
+          <dl className="imd-projects">
+            <dt>raffles</dt>
+            <dd>
+              <Link href="/raffles">enter active drops</Link>
+            </dd>
+            <dt>verify</dt>
+            <dd>
+              <Link href="/verify">audit any draw</Link>
+            </dd>
+            {contractHref ? (
+              <>
+                <dt>contract</dt>
+                <dd>
+                  <a href={contractHref} target="_blank" rel="noreferrer">
+                    {RAFFLE_CONTRACT_ADDRESS}
+                  </a>
+                </dd>
+              </>
+            ) : null}
+            <dt>pass &amp; identity</dt>
+            <dd>
+              <a href={IDENTITY_MD_OPENSEA} target="_blank" rel="noreferrer">
+                opensea.io/collection/identitymd
+              </a>
+            </dd>
           </dl>
         </div>
       </div>
-      <div className="border-t border-black px-6 py-3 font-mono text-[10px] uppercase tracking-widest text-neutral-500">
-        © 2026 IMD RAFFLE · ethereum mainnet
+      <div className="imd-foot-bar">
+        <span>
+          powered by{" "}
+          <a href={RAFAEL_URL} target="_blank" rel="noreferrer">
+            rafael
+          </a>
+        </span>
+        <Link href="/raffles">Raffles</Link>
+        <Link href="/verify">Verify</Link>
+        <a href="https://www.imd.fun/" target="_blank" rel="noreferrer">
+          imd.fun
+        </a>
       </div>
     </footer>
   );
