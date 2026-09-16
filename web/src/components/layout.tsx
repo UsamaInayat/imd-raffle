@@ -182,19 +182,14 @@ export function SiteFooter() {
 }
 
 export function PageHero({
-  eyebrow,
   title,
   description,
-  centered = false,
 }: {
-  eyebrow: string;
   title: string;
   description?: string;
-  centered?: boolean;
 }) {
   return (
-    <section className={`imd-hero-copy ${centered ? "imd-hero-copy-center" : ""}`}>
-      <p className="imd-eyebrow">{eyebrow}</p>
+    <section className="imd-hero-copy">
       <h1 className="imd-headline">{title}</h1>
       {description ? <p className="imd-lede">{description}</p> : null}
     </section>

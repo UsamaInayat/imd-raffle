@@ -8,7 +8,6 @@ export default function AdminPage() {
       <SiteHeader />
       <main className="flex w-full flex-1 flex-col">
         <PageHero
-          eyebrow="ADMIN"
           title="raffle control"
           description="create raffles, manage admins, and trigger draws. all actions require signed transactions. admin wallets must hold Identity MD."
         />

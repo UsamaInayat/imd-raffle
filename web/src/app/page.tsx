@@ -10,7 +10,7 @@ export default function HomePage() {
         <div className="imd-hero-body">
           <SiteHeader />
 
-          <div className="imd-hero-copy imd-hero-copy-center">
+          <div className="imd-hero-copy">
             <p className="imd-eyebrow">
               onchain verifiable probability machine
             </p>

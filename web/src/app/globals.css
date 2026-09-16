@@ -213,16 +213,17 @@ a {
 /* — page hero — */
 
 .imd-hero-copy {
-  padding: 18px 34px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 34px;
   border-bottom: 1.5px solid #000;
+  text-align: center;
 }
 
 .imd-hero .imd-hero-copy {
   border-bottom: none;
-}
-
-.imd-hero-copy-center {
-  text-align: center;
 }
 
 .imd-eyebrow {
@@ -235,7 +236,7 @@ a {
 }
 
 .imd-headline {
-  margin: 14px auto 0;
+  margin: 0;
   max-width: 900px;
   font-size: clamp(34px, 5.2vw, 56px);
   font-weight: 400;
@@ -245,16 +246,20 @@ a {
 }
 
 .imd-lede {
-  margin: 14px auto 0;
+  margin: 0;
   max-width: 36rem;
   font-size: 13px;
   line-height: 1.6;
   color: #555;
 }
 
-.imd-hero-copy-center .imd-lede {
-  margin-left: auto;
-  margin-right: auto;
+.imd-page-fill {
+  display: flex;
+  min-height: min(520px, calc(100svh - 320px));
+  flex: 1 1 auto;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 /* — home hero (imd.fun layout) — */
@@ -314,6 +319,7 @@ a {
   flex-wrap: wrap;
   align-items: stretch;
   align-self: stretch;
+  justify-content: center;
   gap: 14px;
   margin-top: auto;
   padding: 48px 34px 44px;

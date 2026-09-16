@@ -18,7 +18,6 @@ export default async function VerifyPage({
       <SiteHeader />
       <main className="flex w-full flex-1 flex-col">
         <PageHero
-          eyebrow="VERIFY"
           title="public record"
           description="pick a draw to see who entered and who won."
         />

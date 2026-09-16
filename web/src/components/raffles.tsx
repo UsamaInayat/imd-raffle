@@ -343,8 +343,8 @@ export function RaffleGrid() {
 
   if (raffles.length === 0) {
     return (
-      <div className="w-full imd-section-pad">
-        <div className="imd-box imd-panel-inner mx-auto max-w-md text-center imd-type-sm">
+      <div className="imd-page-fill imd-section-pad">
+        <div className="imd-box imd-panel-inner w-full max-w-lg text-center imd-type-sm">
           no raffles yet. holders-only drops appear here when created on-chain.
         </div>
       </div>
@@ -356,9 +356,9 @@ export function RaffleGrid() {
   );
 
   return (
-    <div className="w-full imd-section-pad">
+    <div className={`w-full imd-section-pad ${raffles.length === 1 ? "imd-page-fill" : ""}`}>
         {raffles.length === 1 ? (
-          <div className="mx-auto w-full max-w-md">{renderCard(raffles[0], 0)}</div>
+          <div className="mx-auto w-full max-w-lg">{renderCard(raffles[0], 0)}</div>
         ) : null}
 
         {raffles.length === 2 ? (

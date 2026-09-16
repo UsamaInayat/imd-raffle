@@ -14,7 +14,7 @@ export default async function VerifyRafflePage({
     <>
       <SiteHeader />
       <main className="flex w-full flex-1 flex-col">
-        <PageHero eyebrow="VERIFY" title={`raffle #${id}`} />
+        <PageHero title={`raffle #${id}`} />
         <PageBody flush>
           <Suspense
             fallback={

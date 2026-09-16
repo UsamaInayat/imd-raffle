@@ -14,7 +14,6 @@ export default async function AdminRafflePage({
       <SiteHeader />
       <main className="flex w-full flex-1 flex-col">
         <PageHero
-          eyebrow="ADMIN · RAFFLE"
           title={`raffle #${id}`}
           description="manage draw actions and export entries or winners."
         />
