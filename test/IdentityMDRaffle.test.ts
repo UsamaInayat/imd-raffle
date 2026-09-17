@@ -24,7 +24,7 @@ describe("IdentityMDRaffle (Chainlink VRF)", function () {
       {
         keyHash: ethers.id("test-key-hash"),
         subscriptionId: 1n,
-        callbackGasLimit: 500_000,
+        callbackGasLimit: 100_000,
         requestConfirmations: 3,
         nativePayment: false,
       }
@@ -38,7 +38,7 @@ describe("IdentityMDRaffle (Chainlink VRF)", function () {
     return { owner, alice, bob, carol, stranger, nft, vrf, raffle };
   }
 
-  async function finalizeViaVrf(
+  async function receiveSeedViaVrf(
     raffle: Awaited<ReturnType<typeof deployFixture>>["raffle"],
     vrf: Awaited<ReturnType<typeof deployFixture>>["vrf"],
     raffleId: bigint,
@@ -47,6 +47,16 @@ describe("IdentityMDRaffle (Chainlink VRF)", function () {
     const raffleData = await raffle.getRaffle(raffleId);
     const requestId = raffleData.vrfRequestId;
     await vrf.fulfillRandomWords(requestId, randomWord);
+  }
+
+  async function completeDraw(
+    raffle: Awaited<ReturnType<typeof deployFixture>>["raffle"],
+    vrf: Awaited<ReturnType<typeof deployFixture>>["vrf"],
+    raffleId: bigint,
+    randomWord = 987_654_321n
+  ) {
+    await receiveSeedViaVrf(raffle, vrf, raffleId, randomWord);
+    await raffle.finalizeDraw(raffleId);
   }
 
   it("creates raffles and accepts holder entries", async () => {
@@ -95,7 +105,7 @@ describe("IdentityMDRaffle (Chainlink VRF)", function () {
     ).to.not.be.reverted;
   });
 
-  it("excludes sold NFTs when VRF fulfills", async () => {
+  it("snapshots eligible holders at requestDraw and excludes sold NFTs", async () => {
     const { owner, alice, bob, carol, nft, vrf, raffle } = await deployFixture();
     const endsAt = (await time.latest()) + 100;
 
@@ -108,18 +118,19 @@ describe("IdentityMDRaffle (Chainlink VRF)", function () {
 
     await time.increaseTo(endsAt + 1);
     await expect(raffle.requestDraw(0)).to.emit(raffle, "DrawRequested");
-    await finalizeViaVrf(raffle, vrf, 0n);
 
     const eligible = await raffle.getEligibleEntriesAtDraw(0);
     expect(eligible.length).to.equal(2);
     expect(eligible).to.not.include(carol.address);
 
+    await completeDraw(raffle, vrf, 0n);
+
     const [valid] = await raffle.verifyWinners(0);
     expect(valid).to.equal(true);
   });
 
-  it("closes with zero winners when all entrants sold IDMD before VRF", async () => {
-    const { owner, alice, bob, carol, nft, vrf, raffle } = await deployFixture();
+  it("closes immediately without VRF when no eligible holders remain", async () => {
+    const { owner, alice, bob, carol, nft, raffle } = await deployFixture();
     const endsAt = (await time.latest()) + 100;
 
     await raffle.connect(owner).createRaffle("Empty Draw", "", 2, endsAt);
@@ -132,12 +143,14 @@ describe("IdentityMDRaffle (Chainlink VRF)", function () {
     await nft.connect(carol).transferFrom(carol.address, owner.address, 2n);
 
     await time.increaseTo(endsAt + 1);
-    await raffle.requestDraw(0);
-    await finalizeViaVrf(raffle, vrf, 0n);
+    await expect(raffle.requestDraw(0))
+      .to.emit(raffle, "RaffleFinalized")
+      .withArgs(0, 0, 0, 0);
 
     const raffleData = await raffle.getRaffle(0);
-    expect(raffleData.status).to.equal(2);
+    expect(raffleData.status).to.equal(3); // Closed
     expect(raffleData.winners.length).to.equal(0);
+    expect(raffleData.vrfRequestId).to.equal(0);
 
     const [valid] = await raffle.verifyWinners(0);
     expect(valid).to.equal(true);
@@ -155,7 +168,7 @@ describe("IdentityMDRaffle (Chainlink VRF)", function () {
       .withArgs(0, owner.address);
 
     const raffleData = await raffle.getRaffle(0);
-    expect(raffleData.status).to.equal(3);
+    expect(raffleData.status).to.equal(4); // Cancelled
 
     await expect(raffle.connect(alice).enter(0)).to.be.revertedWithCustomError(
       raffle,
@@ -163,7 +176,7 @@ describe("IdentityMDRaffle (Chainlink VRF)", function () {
     );
   });
 
-  it("finalizes with verifiable winners via Chainlink VRF callback", async () => {
+  it("requires finalizeDraw after VRF seed is received", async () => {
     const { owner, alice, bob, carol, vrf, raffle } = await deployFixture();
     const endsAt = (await time.latest()) + 100;
 
@@ -174,15 +187,39 @@ describe("IdentityMDRaffle (Chainlink VRF)", function () {
 
     await time.increaseTo(endsAt + 1);
     await raffle.requestDraw(0);
-    await finalizeViaVrf(raffle, vrf, 0n, 42n);
+    await receiveSeedViaVrf(raffle, vrf, 0n, 42n);
 
-    const raffleData = await raffle.getRaffle(0);
-    expect(raffleData.status).to.equal(2); // Closed
-    expect(raffleData.winners.length).to.equal(2);
+    let raffleData = await raffle.getRaffle(0);
+    expect(raffleData.status).to.equal(2); // SeedReady
     expect(raffleData.randomSeed).to.equal(42n);
-    expect(raffleData.vrfRequestId).to.be.gt(0);
+    expect(raffleData.winners.length).to.equal(0);
+
+    await expect(raffle.finalizeDraw(0)).to.emit(raffle, "RaffleFinalized");
+
+    raffleData = await raffle.getRaffle(0);
+    expect(raffleData.status).to.equal(3); // Closed
+    expect(raffleData.winners.length).to.equal(2);
 
     const [valid] = await raffle.verifyWinners(0);
     expect(valid).to.equal(true);
+  });
+
+  it("rejects finalizeDraw before seed is ready", async () => {
+    const { owner, alice, vrf, raffle } = await deployFixture();
+    const endsAt = (await time.latest()) + 100;
+
+    await raffle.connect(owner).createRaffle("Draw", "", 1, endsAt);
+    await raffle.connect(alice).enter(0);
+
+    await time.increaseTo(endsAt + 1);
+    await raffle.requestDraw(0);
+
+    await expect(raffle.finalizeDraw(0)).to.be.revertedWithCustomError(
+      raffle,
+      "SeedNotReady"
+    );
+
+    await receiveSeedViaVrf(raffle, vrf, 0n);
+    await expect(raffle.finalizeDraw(0)).to.not.be.reverted;
   });
 });

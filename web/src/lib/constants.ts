@@ -44,6 +44,7 @@ export const RAFFLE_ABI = [
   { type: "function", name: "owner", inputs: [], outputs: [{ type: "address" }], stateMutability: "view" },
   { type: "function", name: "enter", inputs: [{ name: "raffleId", type: "uint256" }], outputs: [], stateMutability: "nonpayable" },
   { type: "function", name: "requestDraw", inputs: [{ name: "raffleId", type: "uint256" }], outputs: [], stateMutability: "nonpayable" },
+  { type: "function", name: "finalizeDraw", inputs: [{ name: "raffleId", type: "uint256" }], outputs: [], stateMutability: "nonpayable" },
   { type: "function", name: "verifyWinners", inputs: [{ name: "raffleId", type: "uint256" }], outputs: [{ type: "bool" }, { type: "address[]" }, { type: "address[]" }], stateMutability: "view" },
   { type: "function", name: "pickWinners", inputs: [{ name: "seed", type: "uint256" }, { name: "entries", type: "address[]" }, { name: "winnerCount", type: "uint256" }], outputs: [{ type: "address[]" }], stateMutability: "pure" },
   { type: "function", name: "requestIdToRaffleId", inputs: [{ name: "requestId", type: "uint256" }], outputs: [{ type: "uint256" }], stateMutability: "view" },
@@ -60,23 +61,24 @@ export const ERC721_ABI = [
 export enum RaffleStatus {
   Open = 0,
   DrawRequested = 1,
-  Closed = 2,
-  Cancelled = 3,
+  SeedReady = 2,
+  Closed = 3,
+  Cancelled = 4,
 }
 
 export function formatStatus(status: RaffleStatus): string {
   switch (status) {
     case RaffleStatus.Open: return "OPEN";
     case RaffleStatus.DrawRequested: return "VRF PENDING";
+    case RaffleStatus.SeedReady: return "READY TO FINALIZE";
     case RaffleStatus.Closed: return "CLOSED";
     case RaffleStatus.Cancelled: return "CANCELLED";
     default: return "UNKNOWN";
   }
 }
 
-/** Public pages hide in-flight VRF state until draw completes. */
+/** Public pages show the same on-chain status as admin. */
 export function formatPublicStatus(status: RaffleStatus): string {
-  if (status === RaffleStatus.DrawRequested) return "ENDED";
   return formatStatus(status);
 }
 

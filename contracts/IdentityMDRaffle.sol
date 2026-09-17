@@ -8,11 +8,11 @@ import {VRFV2PlusClient} from "@chainlink/contracts/src/v0.8/vrf/dev/libraries/V
 
 /// @title IdentityMDRaffle
 /// @notice Holder-gated on-chain raffles with Chainlink VRF v2.5 randomness.
-/// @dev VRF callback gas scales with entry count (~2 balanceOf per entry). Tune callbackGasLimit via setVrfConfig.
+/// @dev Split finalize: requestDraw snapshots eligible holders, VRF callback stores seed only,
+///      finalizeDraw picks winners in a separate ETH transaction (minimal LINK cost).
 contract IdentityMDRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
     IERC721 public immutable identityMD;
 
-    /// @dev Max winners per raffle — keeps VRF callback gas predictable.
     uint256 public constant MAX_WINNERS = 256;
     uint256 public constant MAX_TITLE_LENGTH = 128;
     uint256 public constant MAX_DESCRIPTION_LENGTH = 512;
@@ -20,6 +20,7 @@ contract IdentityMDRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
     enum RaffleStatus {
         Open,
         DrawRequested,
+        SeedReady,
         Closed,
         Cancelled
     }
@@ -62,6 +63,7 @@ contract IdentityMDRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
     );
     event RaffleEntered(uint256 indexed raffleId, address indexed participant);
     event DrawRequested(uint256 indexed raffleId, uint256 indexed vrfRequestId);
+    event DrawSeedReceived(uint256 indexed raffleId, uint256 randomSeed);
     event RaffleFinalized(
         uint256 indexed raffleId,
         uint256 randomSeed,
@@ -77,6 +79,7 @@ contract IdentityMDRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
     error RaffleNotOpen();
     error RaffleStillOpen();
     error DrawAlreadyRequested();
+    error SeedNotReady();
     error NotIdentityMDHolder();
     error NotAdmin();
     error AlreadyEntered();
@@ -156,7 +159,6 @@ contract IdentityMDRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
         emit RaffleCreated(raffleId, title, winnerCount, endsAt, msg.sender);
     }
 
-    /// @notice Cancel an open raffle before draw. Entries remain on-chain for audit.
     function cancelRaffle(uint256 raffleId) external onlyAdmin {
         Raffle storage raffle = _requireRaffle(raffleId);
         if (raffle.status != RaffleStatus.Open) revert RaffleNotCancellable();
@@ -177,12 +179,21 @@ contract IdentityMDRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
         emit RaffleEntered(raffleId, msg.sender);
     }
 
-    /// @notice Requests Chainlink VRF randomness after the raffle ends.
+    /// @notice Snapshots eligible holders (2nd IDMD check), then requests VRF randomness.
     function requestDraw(uint256 raffleId) external {
         Raffle storage raffle = _requireRaffle(raffleId);
         if (raffle.status != RaffleStatus.Open) revert DrawAlreadyRequested();
         if (block.timestamp < raffle.endsAt) revert RaffleStillOpen();
         if (_entries[raffleId].length == 0) revert NoEntries();
+
+        address[] memory eligible = _snapshotEligibleEntries(raffleId);
+        uint256 eligibleCount = eligible.length;
+
+        if (eligibleCount == 0) {
+            raffle.status = RaffleStatus.Closed;
+            emit RaffleFinalized(raffleId, 0, 0, 0);
+            return;
+        }
 
         raffle.status = RaffleStatus.DrawRequested;
 
@@ -206,6 +217,7 @@ contract IdentityMDRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
         emit DrawRequested(raffleId, requestId);
     }
 
+    /// @dev VRF callback — stores seed only. Winner selection runs in finalizeDraw().
     function fulfillRandomWords(
         uint256 requestId,
         uint256[] calldata randomWords
@@ -214,30 +226,36 @@ contract IdentityMDRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
         Raffle storage raffle = _requireRaffle(raffleId);
         if (raffle.status != RaffleStatus.DrawRequested) return;
 
-        address[] memory eligible = _filterEligibleEntries(_entries[raffleId]);
-        _eligibleEntriesAtDraw[raffleId] = eligible;
+        raffle.randomSeed = randomWords[0];
+        raffle.status = RaffleStatus.SeedReady;
 
-        uint256 winnerCount = raffle.winnerCount;
+        emit DrawSeedReceived(raffleId, randomWords[0]);
+    }
+
+    /// @notice Picks winners from the snapshotted eligible list and stored VRF seed.
+    function finalizeDraw(uint256 raffleId) external {
+        Raffle storage raffle = _requireRaffle(raffleId);
+        if (raffle.status != RaffleStatus.SeedReady) revert SeedNotReady();
+
+        address[] memory eligible = _eligibleEntriesAtDraw[raffleId];
         uint256 eligibleCount = eligible.length;
-
         if (eligibleCount == 0) {
             raffle.status = RaffleStatus.Closed;
-            emit RaffleFinalized(raffleId, 0, 0, 0);
+            emit RaffleFinalized(raffleId, raffle.randomSeed, 0, 0);
             return;
         }
 
+        uint256 winnerCount = raffle.winnerCount;
         if (winnerCount > eligibleCount) {
             winnerCount = eligibleCount;
         }
 
-        uint256 seed = randomWords[0];
-        address[] memory winners = pickWinners(seed, eligible, winnerCount);
+        address[] memory winners = pickWinners(raffle.randomSeed, eligible, winnerCount);
 
-        raffle.randomSeed = seed;
         raffle.winners = winners;
         raffle.status = RaffleStatus.Closed;
 
-        emit RaffleFinalized(raffleId, seed, winnerCount, eligibleCount);
+        emit RaffleFinalized(raffleId, raffle.randomSeed, winnerCount, eligibleCount);
     }
 
     function getRaffleCount() external view returns (uint256) {
@@ -298,7 +316,7 @@ contract IdentityMDRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
         uint256 raffleId
     ) external view returns (address[] memory) {
         _requireRaffle(raffleId);
-        return _filterEligibleEntries(_entries[raffleId]);
+        return _filterEligibleEntriesView(_entries[raffleId]);
     }
 
     function pickWinners(
@@ -314,14 +332,6 @@ contract IdentityMDRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
             winnerCount = entryCount;
         }
 
-        address[] memory pool = new address[](entryCount);
-        for (uint256 i = 0; i < entryCount; ) {
-            pool[i] = entries[i];
-            unchecked {
-                ++i;
-            }
-        }
-
         winners = new address[](winnerCount);
         uint256 remaining = entryCount;
         uint256 currentSeed = seed;
@@ -329,8 +339,8 @@ contract IdentityMDRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
         for (uint256 w = 0; w < winnerCount; ) {
             (uint256 index, uint256 nextSeed) = _boundedRandom(currentSeed, remaining);
             currentSeed = nextSeed;
-            winners[w] = pool[index];
-            pool[index] = pool[remaining - 1];
+            winners[w] = entries[index];
+            entries[index] = entries[remaining - 1];
             unchecked {
                 --remaining;
                 ++w;
@@ -379,13 +389,18 @@ contract IdentityMDRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
         return (true, recomputed, stored);
     }
 
-    function _filterEligibleEntries(
-        address[] storage entries
-    ) internal view returns (address[] memory eligible) {
+    function _snapshotEligibleEntries(
+        uint256 raffleId
+    ) internal returns (address[] memory eligible) {
+        address[] storage entries = _entries[raffleId];
         uint256 len = entries.length;
+
+        eligible = new address[](len);
         uint256 count;
         for (uint256 i = 0; i < len; ) {
-            if (identityMD.balanceOf(entries[i]) > 0) {
+            address entry = entries[i];
+            if (identityMD.balanceOf(entry) > 0) {
+                eligible[count] = entry;
                 unchecked {
                     ++count;
                 }
@@ -395,19 +410,35 @@ contract IdentityMDRaffle is VRFConsumerBaseV2Plus, ReentrancyGuard {
             }
         }
 
-        eligible = new address[](count);
-        uint256 j;
+        assembly {
+            mstore(eligible, count)
+        }
+
+        _eligibleEntriesAtDraw[raffleId] = eligible;
+    }
+
+    function _filterEligibleEntriesView(
+        address[] storage entries
+    ) internal view returns (address[] memory eligible) {
+        uint256 len = entries.length;
+
+        eligible = new address[](len);
+        uint256 count;
         for (uint256 i = 0; i < len; ) {
             address entry = entries[i];
             if (identityMD.balanceOf(entry) > 0) {
-                eligible[j] = entry;
+                eligible[count] = entry;
                 unchecked {
-                    ++j;
+                    ++count;
                 }
             }
             unchecked {
                 ++i;
             }
+        }
+
+        assembly {
+            mstore(eligible, count)
         }
     }
 

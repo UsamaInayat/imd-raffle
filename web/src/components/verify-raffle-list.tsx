@@ -23,7 +23,11 @@ function VerifyRaffleCard({
     ? formatEthCountdown(raffle.endsAt, now)
     : raffle.status === RaffleStatus.Closed
       ? "draw complete"
-      : "ended";
+      : raffle.status === RaffleStatus.DrawRequested
+        ? "vrf pending"
+        : raffle.status === RaffleStatus.SeedReady
+          ? "ready to finalize"
+          : "ended";
 
   return (
     <Link
@@ -58,6 +62,16 @@ function VerifyRaffleCard({
           <dt className="imd-muted">ENDS</dt>
           <dd className="imd-type-sm mt-0.5">{endsLabel}</dd>
         </div>
+        <div>
+          <dt className="imd-muted">VRF</dt>
+          <dd className="imd-type-sm mt-0.5">
+            {raffle.status === RaffleStatus.SeedReady
+              ? "seed ready"
+              : raffle.vrfRequestId > BigInt(0)
+                ? "requested"
+                : "pending"}
+          </dd>
+        </div>
       </dl>
 
       <div className="imd-box-pad flex flex-wrap items-center justify-between gap-3">
@@ -65,8 +79,10 @@ function VerifyRaffleCard({
           {raffle.status === RaffleStatus.Closed
             ? `${raffle.winners.length} winner${raffle.winners.length === 1 ? "" : "s"} recorded on-chain`
             : raffle.status === RaffleStatus.DrawRequested
-              ? "raffle ended — proof after finalize"
-              : "full entry list and draw proof after close"}
+              ? "chainlink vrf pending — proof after finalize"
+              : raffle.status === RaffleStatus.SeedReady
+                ? "vrf seed ready — proof after finalize"
+                : "full entry list and draw proof after close"}
         </p>
         <span className="imd-btn imd-btn-sm inline-flex shrink-0">VIEW PROOF</span>
       </div>

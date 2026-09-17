@@ -1,0 +1,14 @@
+{
+  "address": "0xb1bB37C6F53F75E32A8738CEE1f2D395EFec087F",
+  "identityMD": "0x0000eC93127BAA929E58E97dd0095A2BFb38ec1D",
+  "vrfCoordinator": "0xD7f86b4b8Cae7D942340FF628F82735b7a20893a",
+  "owner": "0xDDb9AB1421E6F1d864c01BA63FB05B183d5ea4d4",
+  "vrfConfig": {
+    "keyHash": "0x8077df514608a09f83e4e8d300645594e5d7234665448ba83f51a50f842bd3d9",
+    "subscriptionId": "47584038332363573085755144741082866832892333353694184881311523362285687766175",
+    "callbackGasLimit": 100000,
+    "requestConfirmations": 3,
+    "nativePayment": false
+  },
+  "deployedAt": "2026-09-17T21:49:47.228Z"
+}

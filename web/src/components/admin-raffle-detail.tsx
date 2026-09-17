@@ -143,8 +143,25 @@ export function AdminRaffleDetail({ raffleId }: { raffleId: number }) {
 
           {raffle.status === RaffleStatus.DrawRequested ? (
             <span className="imd-type-xs imd-muted">
-              vrf pending — chainlink will callback automatically
+              vrf pending — waiting for chainlink seed
             </span>
+          ) : null}
+
+          {raffle.status === RaffleStatus.SeedReady ? (
+            <button
+              type="button"
+              className="imd-btn imd-btn-sm"
+              disabled={isPending}
+              onClick={() =>
+                write({
+                  abi: RAFFLE_ABI,
+                  functionName: "finalizeDraw",
+                  args: [BigInt(raffle.id)],
+                })
+              }
+            >
+              FINALIZE DRAW
+            </button>
           ) : null}
 
           <Link href={`/verify/${raffle.id}`} className="imd-btn imd-btn-sm">

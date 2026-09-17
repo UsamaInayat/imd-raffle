@@ -157,8 +157,13 @@ export function useRaffleStats() {
 function actionHint(raffle: RaffleData, now: number, hasEntered?: boolean): string {
   if (raffle.status === RaffleStatus.Cancelled) return "cancelled — no further action";
   if (raffle.status === RaffleStatus.Closed) return "draw complete — view winners or verify proof";
-  if (raffle.status === RaffleStatus.DrawRequested) return "raffle ended";
-  if (Number(raffle.endsAt) <= now) return "raffle ended";
+  if (raffle.status === RaffleStatus.DrawRequested) {
+    return "chainlink vrf is delivering randomness…";
+  }
+  if (raffle.status === RaffleStatus.SeedReady) {
+    return "vrf seed ready — finalize draw to pick winners";
+  }
+  if (Number(raffle.endsAt) <= now) return "raffle ended — request vrf draw";
   if (hasEntered) return "you're in — wait for the timer to end";
   return "connect wallet to enter";
 }
@@ -182,7 +187,8 @@ function RaffleCard({
     enabled: Boolean(address),
   });
 
-  const { enter, isPending, error, txHash } = useRaffleActions(raffle.id);
+  const { enter, requestDraw, isPending, error, txHash } =
+    useRaffleActions(raffle.id);
 
   const fillPct =
     Number(raffle.winnerCount) === 0
@@ -253,6 +259,31 @@ function RaffleCard({
           >
             {hasEntered ? "ENTERED" : isPending ? "…" : "ENTER RAFFLE"}
           </button>
+        ) : null}
+
+        {raffle.status === RaffleStatus.Open &&
+        Number(raffle.endsAt) <= now &&
+        raffle.entryCount > BigInt(0) ? (
+          <button
+            type="button"
+            className="imd-btn imd-btn-sm"
+            disabled={isPending}
+            onClick={requestDraw}
+          >
+            REQUEST VRF DRAW
+          </button>
+        ) : null}
+
+        {raffle.status === RaffleStatus.DrawRequested ? (
+          <span className="imd-btn imd-btn-sm opacity-60">
+            VRF PENDING…
+          </span>
+        ) : null}
+
+        {raffle.status === RaffleStatus.SeedReady ? (
+          <span className="imd-btn imd-btn-sm opacity-60">
+            READY TO FINALIZE
+          </span>
         ) : null}
 
       </div>

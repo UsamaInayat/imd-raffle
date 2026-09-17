@@ -1,93 +1,81 @@
 # IdentityMD Raffle — Contract Guide (Chainlink VRF v2.5)
 
-## Draw flow
+**Current mainnet deployment:** see `deployments/mainnet-latest.json`
+
+## Draw flow (split finalize)
 
 ```
-createRaffle (admin) → enter (holders, signed tx) → time ends
-→ requestDraw (anyone, signed tx) → Chainlink VRF callback
-→ fulfillRandomWords → filter eligible holders → pickWinners → CLOSED
+createRaffle (admin) → enter (holders) → time ends
+→ requestDraw (anyone, ETH)
+    → 2nd IDMD balanceOf check → eligible snapshot on-chain
+    → (0 eligible) close immediately, 0 LINK
+    → else request Chainlink VRF
+→ VRF callback (LINK) → store randomSeed only → SEED_READY
+→ finalizeDraw (anyone, ETH) → pickWinners → CLOSED
 ```
+
+## Why split finalize is cheap
+
+| Step | Payer | Work |
+|------|-------|------|
+| `requestDraw()` | ETH | Holder re-check + eligible snapshot |
+| VRF callback | LINK | Store seed only (~100k gas limit) |
+| `finalizeDraw()` | ETH | Pick winners from snapshot + seed |
+
+LINK cost no longer scales with entry count in the VRF callback.
 
 ## Randomness source
 
-**Chainlink VRF v2.5** — not blockhash/prevrandao.
+**Chainlink VRF v2.5** on Ethereum mainnet.
 
-1. `requestDraw()` calls `s_vrfCoordinator.requestRandomWords(...)`
-2. Chainlink oracle generates randomness + cryptographic proof
-3. Coordinator calls `fulfillRandomWords(requestId, randomWords)` on your contract
-4. Contract uses `randomWords[0]` as seed for `pickWinners()`
-
-Verify on [vrf.chain.link](https://vrf.chain.link) using the stored `vrfRequestId`.
+- Coordinator: `0xD7f86b4b8Cae7D942340FF628F82735b7a20893a`
+- Key hash (200 gwei lane): `0x8077df514608a09f83e4e8d300645594e5d7234665448ba83f51a50f842bd3d9`
+- Default `callbackGasLimit`: **100,000**
 
 ## Holder checks
 
 | When | Check |
 |------|-------|
 | Entry | `balanceOf > 0` required |
-| VRF callback | Re-filter entries — sold IDMD = excluded from eligible pool |
+| `requestDraw()` | Re-filter — sold IDMD before draw = excluded |
+| VRF callback | No holder checks |
+| `finalizeDraw()` | Uses snapshotted eligible list only |
 
-## Deployment requirements
+## Raffle statuses
 
-1. Create VRF subscription at [vrf.chain.link](https://vrf.chain.link)
-2. Fund subscription with LINK
-3. Deploy contract with `VRF_SUBSCRIPTION_ID` env var
-4. **Add deployed contract address as VRF consumer** on your subscription
-5. Set `NEXT_PUBLIC_RAFFLE_CONTRACT_ADDRESS`
+| Value | Status | Meaning |
+|-------|--------|---------|
+| 0 | Open | Accepting entries |
+| 1 | DrawRequested | VRF pending |
+| 2 | SeedReady | Seed stored — call `finalizeDraw()` |
+| 3 | Closed | Winners picked |
+| 4 | Cancelled | Admin cancelled |
+
+## Deploy
 
 ```bash
-VRF_SUBSCRIPTION_ID=123 npx hardhat run scripts/deploy.ts --network mainnet
+# .env: DEPLOYER_PRIVATE_KEY, MAINNET_RPC_URL, VRF_SUBSCRIPTION_ID
+npm run deploy:mainnet
+
+# Optional: ETHERSCAN_API_KEY for verification
+npm run verify:mainnet
 ```
 
-## Mainnet addresses
+Deploy script auto-registers the contract as a VRF consumer when the deployer owns the subscription.
 
-| Param | Value |
-|-------|-------|
-| VRF Coordinator | `0xD7f86b4b8Cae7D942340FF628F82735b7a20893a` |
-| Key hash (200 gwei — cheapest mainnet lane) | `0x8077df514608a09f83e4e8d300645594e5d7234665448ba83f51a50f842bd3d9` |
-| Identity MD NFT | `0x0000eC93127BAA929E58E97dd0095A2BFb38ec1D` |
+## Frontend env
 
-## Signed transactions required
+```
+NEXT_PUBLIC_RAFFLE_CONTRACT_ADDRESS=<address from deployments/mainnet-latest.json>
+```
 
-| Action | Signed tx? |
-|--------|------------|
-| Create raffle | Yes (admin) |
-| Enter raffle | **Yes (holder)** |
-| Request draw | Yes (anyone) |
-| VRF fulfill | No — Chainlink calls your contract |
-| Add admin | Yes (owner) |
+## Cost guidance
 
-## No finalize window
+| Draw size | LINK (approx) | Notes |
+|-----------|---------------|-------|
+| Any with eligible | ~0.2–0.6 LINK | Tiny VRF callback |
+| Zero eligible | 0 LINK | Closes in `requestDraw()` |
+| `requestDraw` ETH | scales with entries | 1× balanceOf per entrant |
+| `finalizeDraw` ETH | scales with entries | reads eligible snapshot |
 
-Unlike the old blockhash design, there is **no 250-block deadline**. After `requestDraw()`, Chainlink delivers randomness asynchronously (typically 1–3 blocks + oracle latency). You can request a draw hours or days after the raffle ends.
-
-## Security notes
-
-- VRF randomness is stronger than prevrandao/blockhash
-- Small LINK fee per draw from your subscription
-- If subscription runs out of LINK, VRF requests fail — keep it funded
-- Owner can update `vrfConfig` via `setVrfConfig()`
-
-## Gas & flexibility (pre-mainnet)
-
-| Feature | Detail |
-|---------|--------|
-| Optimizer | 1000 runs — lower runtime gas on `enter()` / VRF callback |
-| Storage packing | `endsAt` (uint64), `winnerCount` (uint32), `status` (uint8) in one slot |
-| VRF callback event | Emits counts only — winners/eligible read from storage (saves callback gas) |
-| `MAX_WINNERS` | 256 — prevents callback OOG from absurd winner counts |
-| String limits | Title 128 chars, description 512 — prevents storage griefing |
-| `cancelRaffle()` | Admin can cancel open raffles before draw (no redeploy needed for mistakes) |
-| Zero eligible at draw | Closes cleanly with zero winners instead of stuck VRF state |
-| `setVrfConfig()` | Owner can bump `callbackGasLimit` if entry counts grow |
-
-### VRF callback gas vs entries
-
-Each entry costs ~2× `balanceOf` external calls during the draw filter. Rough guidance:
-
-| Entries | Suggested `callbackGasLimit` |
-|---------|------------------------------|
-| ≤ 200 | 500,000 (default) |
-| 200–500 | 750,000–1,000,000 |
-| 500+ | Increase via `setVrfConfig()` and test on a fork |
-
-No hard on-chain entry cap — tune gas limit instead so large community raffles stay supported.
+Fund subscription with **~5 LINK** for many draws.

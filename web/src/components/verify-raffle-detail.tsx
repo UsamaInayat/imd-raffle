@@ -214,8 +214,8 @@ export function VerifyRaffleDetail({ raffleId }: { raffleId: number }) {
 
           <p className="imd-type-sm imd-muted mt-4 leading-relaxed">
             anyone can replay <code>pickWinners(seed, eligibleEntries, winnerCount)</code>{" "}
-            using the Chainlink VRF random word and eligible entry snapshot. wallets that sold
-            IDMD before the VRF callback were excluded.
+            using the Chainlink VRF random word and eligible entry snapshot taken at
+            requestDraw(). wallets that sold IDMD before the draw was requested were excluded.
           </p>
 
           <div className="mt-6 grid gap-4 md:grid-cols-2">
@@ -246,16 +246,37 @@ export function VerifyRaffleDetail({ raffleId }: { raffleId: number }) {
             <ol className="mt-2 list-decimal space-y-1 pl-4">
               <li>After the raffle ends, anyone calls requestDraw().</li>
               <li>Contract requests random words from Chainlink VRF v2.5.</li>
-              <li>Chainlink callback delivers randomWord → filters eligible holders → pickWinners().</li>
+              <li>requestDraw() re-checks IDMD holders and requests VRF randomness.</li>
+              <li>Chainlink callback stores the VRF seed (minimal LINK cost).</li>
+              <li>finalizeDraw() picks winners from the seed + eligible snapshot.</li>
               <li>Verify proof at vrf.chain.link + replay pickWinners() off-chain.</li>
             </ol>
           </div>
         </div>
       ) : status === RaffleStatus.DrawRequested ? (
         <div className="imd-box imd-panel-inner imd-type-sm imd-muted">
-          <p className="imd-type-label">raffle ended</p>
+          <p className="imd-type-label">vrf pending</p>
           <p className="mt-3">
-            draw in progress. proof and winners appear here when finalized.
+            chainlink is delivering randomness. proof and winners appear here after
+            finalizeDraw() completes.
+          </p>
+          {vrfRequestId > BigInt(0) ? (
+            <a
+              href={`https://vrf.chain.link/mainnet/${vrfRequestId.toString()}`}
+              target="_blank"
+              rel="noreferrer"
+              className="imd-type-meta mt-3 inline-block underline"
+            >
+              track on vrf.chain.link
+            </a>
+          ) : null}
+        </div>
+      ) : status === RaffleStatus.SeedReady ? (
+        <div className="imd-box imd-panel-inner imd-type-sm imd-muted">
+          <p className="imd-type-label">ready to finalize</p>
+          <p className="mt-3">
+            vrf seed is on-chain. anyone can call finalizeDraw() to pick winners and
+            unlock full proof here.
           </p>
         </div>
       ) : (
