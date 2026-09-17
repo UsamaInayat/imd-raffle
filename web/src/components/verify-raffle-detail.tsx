@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useContractRead } from "@/hooks/use-chain";
 import {
-  formatStatus,
+  formatPublicStatus,
   RAFFLE_ABI,
   RAFFLE_CONTRACT_ADDRESS,
   RaffleStatus,
@@ -130,7 +130,7 @@ export function VerifyRaffleDetail({ raffleId }: { raffleId: number }) {
         <dl className="imd-type-sm mt-6 grid gap-3 sm:grid-cols-2">
           <div>
             <dt className="imd-muted">STATUS</dt>
-            <dd>{formatStatus(status as RaffleStatus)}</dd>
+            <dd>{formatPublicStatus(status as RaffleStatus)}</dd>
           </div>
           <div>
             <dt className="imd-muted">WINNER SLOTS</dt>
@@ -250,6 +250,13 @@ export function VerifyRaffleDetail({ raffleId }: { raffleId: number }) {
               <li>Verify proof at vrf.chain.link + replay pickWinners() off-chain.</li>
             </ol>
           </div>
+        </div>
+      ) : status === RaffleStatus.DrawRequested ? (
+        <div className="imd-box imd-panel-inner imd-type-sm imd-muted">
+          <p className="imd-type-label">raffle ended</p>
+          <p className="mt-3">
+            draw in progress. proof and winners appear here when finalized.
+          </p>
         </div>
       ) : (
         <div className="imd-box imd-panel-inner imd-type-sm imd-muted">

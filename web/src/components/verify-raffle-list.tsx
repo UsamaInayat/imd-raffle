@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { useAllRaffles } from "@/components/raffles";
 import {
   formatEthCountdown,
-  formatStatus,
+  formatPublicStatus,
   RAFFLE_CONTRACT_ADDRESS,
   RaffleStatus,
 } from "@/lib/constants";
@@ -36,7 +36,7 @@ function VerifyRaffleCard({
             <p className="imd-type-label">RAFFLE #{raffle.id}</p>
             <h2 className="imd-type-card-title mt-1">{raffle.title}</h2>
           </div>
-          <span className="imd-tag">{formatStatus(raffle.status)}</span>
+          <span className="imd-tag">{formatPublicStatus(raffle.status)}</span>
         </div>
         {raffle.description ? (
           <p className="imd-type-xs imd-muted mt-3 leading-relaxed">
@@ -58,19 +58,15 @@ function VerifyRaffleCard({
           <dt className="imd-muted">ENDS</dt>
           <dd className="imd-type-sm mt-0.5">{endsLabel}</dd>
         </div>
-        <div>
-          <dt className="imd-muted">VRF</dt>
-          <dd className="imd-type-sm mt-0.5">
-            {raffle.vrfRequestId > BigInt(0) ? "requested" : "pending"}
-          </dd>
-        </div>
       </dl>
 
       <div className="imd-box-pad flex flex-wrap items-center justify-between gap-3">
         <p className="imd-type-meta">
           {raffle.status === RaffleStatus.Closed
             ? `${raffle.winners.length} winner${raffle.winners.length === 1 ? "" : "s"} recorded on-chain`
-            : "full entry list and draw proof after close"}
+            : raffle.status === RaffleStatus.DrawRequested
+              ? "raffle ended — proof after finalize"
+              : "full entry list and draw proof after close"}
         </p>
         <span className="imd-btn imd-btn-sm inline-flex shrink-0">VIEW PROOF</span>
       </div>

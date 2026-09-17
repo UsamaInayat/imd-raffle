@@ -11,7 +11,7 @@ import {
 } from "@/hooks/use-chain";
 import {
   formatEthCountdown,
-  formatStatus,
+  formatPublicStatus,
   RAFFLE_ABI,
   RAFFLE_CONTRACT_ADDRESS,
   RaffleStatus,
@@ -157,8 +157,8 @@ export function useRaffleStats() {
 function actionHint(raffle: RaffleData, now: number, hasEntered?: boolean): string {
   if (raffle.status === RaffleStatus.Cancelled) return "cancelled — no further action";
   if (raffle.status === RaffleStatus.Closed) return "draw complete — view winners or verify proof";
-  if (raffle.status === RaffleStatus.DrawRequested) return "chainlink vrf is picking winners…";
-  if (Number(raffle.endsAt) <= now) return "raffle ended — request vrf draw";
+  if (raffle.status === RaffleStatus.DrawRequested) return "raffle ended";
+  if (Number(raffle.endsAt) <= now) return "raffle ended";
   if (hasEntered) return "you're in — wait for the timer to end";
   return "connect wallet to enter";
 }
@@ -182,8 +182,7 @@ function RaffleCard({
     enabled: Boolean(address),
   });
 
-  const { enter, requestDraw, isPending, error, txHash } =
-    useRaffleActions(raffle.id);
+  const { enter, isPending, error, txHash } = useRaffleActions(raffle.id);
 
   const fillPct =
     Number(raffle.winnerCount) === 0
@@ -206,7 +205,7 @@ function RaffleCard({
           <h2 className="imd-type-card-title mt-1">{raffle.title}</h2>
         </div>
         <span className="imd-tag">
-          {formatStatus(raffle.status)}
+          {formatPublicStatus(raffle.status)}
         </span>
       </div>
 
@@ -256,24 +255,6 @@ function RaffleCard({
           </button>
         ) : null}
 
-        {raffle.status === RaffleStatus.Open &&
-        Number(raffle.endsAt) <= now &&
-        raffle.entryCount > BigInt(0) ? (
-          <button
-            type="button"
-            className="imd-btn imd-btn-sm"
-            disabled={isPending}
-            onClick={requestDraw}
-          >
-            REQUEST VRF DRAW
-          </button>
-        ) : null}
-
-        {raffle.status === RaffleStatus.DrawRequested ? (
-          <span className="imd-btn imd-btn-sm opacity-60">
-            VRF PENDING…
-          </span>
-        ) : null}
       </div>
 
       {isOpen && authenticated && !hasEntered ? (

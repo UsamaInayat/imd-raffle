@@ -42,8 +42,8 @@ VRF_SUBSCRIPTION_ID=123 npx hardhat run scripts/deploy.ts --network mainnet
 
 | Param | Value |
 |-------|-------|
-| VRF Coordinator | `0x9DdfaCa8183c41ad55329BdeeD8F964C1b1A9922` |
-| Key hash (500 gwei) | `0x787d74caea10b2b34310dada524d09513825a66cfc896b154862ccaba080b10e` |
+| VRF Coordinator | `0xD7f86b4b8Cae7D942340FF628F82735b7a20893a` |
+| Key hash (200 gwei — cheapest mainnet lane) | `0x8077df514608a09f83e4e8d300645594e5d7234665448ba83f51a50f842bd3d9` |
 | Identity MD NFT | `0x0000eC93127BAA929E58E97dd0095A2BFb38ec1D` |
 
 ## Signed transactions required

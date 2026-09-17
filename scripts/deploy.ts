@@ -1,9 +1,9 @@
 import { ethers } from "hardhat";
 
 // Ethereum mainnet Chainlink VRF v2.5 — https://docs.chain.link/vrf/v2-5/supported-networks
-const MAINNET_VRF_COORDINATOR = "0x9DDfAca8183c41AD55329BdEed8F964c1b1A9922";
+const MAINNET_VRF_COORDINATOR = "0xD7f86b4b8Cae7D942340FF628F82735b7a20893a";
 const MAINNET_KEY_HASH =
-  "0x787d74caea10b2b34310dada524d09513825a66cfc896b154862ccaba080b10e";
+  "0x8077df514608a09f83e4e8d300645594e5d7234665448ba83f51a50f842bd3d9";
 
 async function main() {
   const identityMD = "0x0000eC93127BAA929E58E97dd0095A2BFb38ec1D";

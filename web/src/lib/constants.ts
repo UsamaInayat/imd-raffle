@@ -74,6 +74,12 @@ export function formatStatus(status: RaffleStatus): string {
   }
 }
 
+/** Public pages hide in-flight VRF state until draw completes. */
+export function formatPublicStatus(status: RaffleStatus): string {
+  if (status === RaffleStatus.DrawRequested) return "ENDED";
+  return formatStatus(status);
+}
+
 export function shortAddress(address: string): string {
   return `${address.slice(0, 6)}…${address.slice(-4)}`;
 }
