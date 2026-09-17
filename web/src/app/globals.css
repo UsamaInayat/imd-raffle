@@ -294,16 +294,18 @@ a {
 .imd-bowl-jar {
   display: flex;
   width: 100%;
-  max-width: 420px;
+  max-width: min(560px, 92vw);
+  margin-inline: auto;
   justify-content: center;
-  padding: 4px 16px 20px;
+  padding: 8px 16px 24px;
 }
 
 .imd-bowl-jar-canvas {
   display: block;
   width: 100%;
   height: auto;
-  aspect-ratio: 420 / 520;
+  aspect-ratio: 480 / 580;
+  max-height: min(68vh, 620px);
 }
 
 @media (prefers-reduced-motion: reduce) {

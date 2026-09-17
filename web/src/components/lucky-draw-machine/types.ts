@@ -9,12 +9,13 @@ export type Ball = {
   vy: number;
   radius: number;
   fill: string;
+  /** 0 = back, 1 = front — used for depth sorting & shading. */
+  depth: number;
   phase: BallPhase;
-  /** Earliest time (ms) this ball may exit again. */
   exitAfter: number;
 };
 
-export type BowlGeometry = {
+export type DrumGeometry = {
   cx: number;
   cy: number;
   rx: number;
@@ -22,4 +23,10 @@ export type BowlGeometry = {
   holeX: number;
   holeY: number;
   holeR: number;
+};
+
+export type SimulationState = {
+  mixerAngle: number;
+  nextExitAt: number;
+  exitLocked: boolean;
 };

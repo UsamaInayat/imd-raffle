@@ -1,49 +1,86 @@
-/** Minimalist bowl animation — edit constants here to tune look & physics. */
+/** Lottery ball drum — tune physics, timing, and look here. */
 export const BOWL_CONFIG = {
-  width: 420,
-  height: 520,
+  width: 480,
+  height: 580,
 
-  ballCount: 55,
-  ballRadius: 7,
+  ballCount: 80,
+  ballRadius: { min: 5.4, max: 8.2, default: 6.8 },
 
-  /** Tall rounded glass jar (ellipse). */
-  bowl: {
-    cx: 210,
-    cy: 238,
-    rx: 112,
-    ry: 152,
+  /** Spherical/oval glass drum (logical coordinates). */
+  drum: {
+    cx: 240,
+    cy: 248,
+    rx: 132,
+    ry: 168,
   },
 
-  /** Small opening at the lowest point of the jar. */
+  /** Bottom outlet — ~1.5 ball diameters. */
   hole: {
-    radius: 10,
+    radius: 11,
+  },
+
+  mixer: {
+    /** Shaft spans this fraction of drum height (from top interior). */
+    shaftTopOffset: 0.22,
+    shaftBottomOffset: 0.48,
+    armLengthRatio: 0.38,
+    armStroke: 1.4,
+    /** Radians per ms at 60fps baseline. */
+    rotationSpeed: 0.00055,
+    impulseRadius: 14,
+    impulseStrength: 0.42,
+  },
+
+  exit: {
+    minIntervalMs: 2000,
+    maxIntervalMs: 5000,
+    respawnCooldownMs: 400,
+    fallBelowY: 620,
   },
 
   physics: {
-    gravity: 0.11,
-    damping: 0.989,
-    wallRestitution: 0.42,
-    ballRestitution: 0.48,
-    maxSpeed: 4.8,
-    /** Occasional tiny nudge so the system never fully freezes. */
-    microImpulseChance: 0.006,
-    microImpulseStrength: 0.28,
-    /** Min ms before same ball can exit again after recycle. */
-    respawnCooldown: 800,
+    gravity: 0.105,
+    damping: 0.988,
+    wallRestitution: 0.4,
+    ballRestitution: 0.46,
+    friction: 0.992,
+    maxSpeed: 5.2,
+    microImpulseChance: 0.004,
+    microImpulseStrength: 0.22,
+    holePullStrength: 0.0035,
   },
 
-  /** Monochrome ball fills — cycle through these. */
-  ballTones: ["#ffffff", "#ececec", "#c8c8c8", "#8a8a8a", "#404040", "#141414"],
+  ballTones: [
+    "#ffffff",
+    "#eeeeee",
+    "#dddddd",
+    "#bbbbbb",
+    "#999999",
+    "#777777",
+    "#555555",
+    "#333333",
+    "#111111",
+  ],
 
-  /** Draw tiny numbers on balls (set false if too cluttered). */
   showNumbers: true,
 
   colors: {
-    glassStroke: "rgba(0,0,0,0.38)",
-    glassFill: "rgba(255,255,255,0.04)",
-    glassHighlight: "rgba(255,255,255,0.35)",
-    hole: "rgba(0,0,0,0.55)",
-    numberLight: "#ffffff",
-    numberDark: "#1a1a1a",
+    glassStroke: "rgba(0,0,0,0.42)",
+    glassInnerStroke: "rgba(255,255,255,0.28)",
+    glassFill: "rgba(255,255,255,0.03)",
+    glassHighlight: "rgba(255,255,255,0.45)",
+    glassSheen: "rgba(255,255,255,0.12)",
+    shadow: "rgba(0,0,0,0.06)",
+    mixer: "#1a1a1a",
+    mixerArm: "#333333",
+    outletRing: "rgba(0,0,0,0.5)",
+    outletInner: "rgba(0,0,0,0.65)",
+    numberLight: "#f5f5f5",
+    numberDark: "#111111",
   },
 } as const;
+
+export function randomExitInterval(): number {
+  const { minIntervalMs, maxIntervalMs } = BOWL_CONFIG.exit;
+  return minIntervalMs + Math.random() * (maxIntervalMs - minIntervalMs);
+}
