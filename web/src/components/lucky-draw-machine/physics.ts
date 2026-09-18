@@ -107,7 +107,7 @@ function randomBallRadius(): number {
 
 function randomTone(): string {
   const tones = BOWL_CONFIG.ballTones;
-  return tones[Math.floor(Math.random() * tones.length)] ?? "#999999";
+  return tones[Math.floor(Math.random() * tones.length)] ?? "#000000";
 }
 
 function computeFishbowlDepth(x: number, y: number, drum: DrumGeometry): number {

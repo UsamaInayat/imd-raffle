@@ -10,7 +10,7 @@ export const BOWL_CONFIG = {
   perspective: {
     scaleMin: 0.44,
     scaleMax: 1.72,
-    alphaMin: 0.48,
+    alphaMin: 1,
     alphaMax: 1,
     numberCutoff: 0.28,
   },
@@ -85,40 +85,16 @@ export const BOWL_CONFIG = {
     settleIterations: 90,
   },
 
-  ballTones: [
-    "#ffffff",
-    "#dddddd",
-    "#999999",
-    "#555555",
-    "#222222",
-    "#000000",
-  ],
+  ballTones: ["#ffffff", "#000000"],
 
   showNumbers: true,
 
   colors: {
-    /** Glass vessel — clear interior, visible rim only. */
-    glassOuter: "rgba(0,0,0,0.32)",
-    glassInner: "rgba(255,255,255,0.45)",
-    glassHighlight: "rgba(255,255,255,0.72)",
-    glassHighlight2: "rgba(255,255,255,0.28)",
-    glassFresnel: "rgba(255,255,255,0.14)",
-    glassRimShadow: "rgba(0,0,0,0.08)",
-    outletRim: "rgba(0,0,0,0.18)",
-    outletVoid: "rgba(0,0,0,0.35)",
-    contactShadow: "rgba(0,0,0,0.045)",
-    /** Brushed aluminium pillar & rods. */
-    pillarTop: "#eeeeee",
-    pillarMid: "#cccccc",
-    pillarBottom: "#aaaaaa",
-    pillarEdge: "rgba(0,0,0,0.16)",
-    rod: "#666666",
-    rodHighlight: "#999999",
-    rodShadow: "#333333",
-    rodCap: "#444444",
-    rodCapHighlight: "#777777",
+    /** Glass vessel — black rim only, no grey fill. */
+    glassOuter: "#000000",
+    glassInner: "#000000",
     numberLight: "#ffffff",
-    numberDark: "#0a0a0a",
+    numberDark: "#000000",
   },
 } as const;
 

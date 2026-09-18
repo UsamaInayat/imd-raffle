@@ -13,17 +13,6 @@ function isLightFill(hex: string): boolean {
   return (r * 299 + g * 587 + b * 114) / 1000 > 150;
 }
 
-function shadeHex(hex: string, amount: number): string {
-  const n = parseInt(hex.slice(1), 16);
-  let r = (n >> 16) & 255;
-  let g = (n >> 8) & 255;
-  let b = n & 255;
-  r = Math.max(0, Math.min(255, r + amount));
-  g = Math.max(0, Math.min(255, g + amount));
-  b = Math.max(0, Math.min(255, b + amount));
-  return `#${((r << 16) | (g << 8) | b).toString(16).padStart(6, "0")}`;
-}
-
 function depthScale(depth: number): number {
   return V.scaleMin + depth * (V.scaleMax - V.scaleMin);
 }
@@ -58,23 +47,6 @@ function sortBalls(balls: Ball[]): Ball[] {
   return [...balls].sort((a, b) => a.depth - b.depth);
 }
 
-function drawContactShadow(
-  ctx: CanvasRenderingContext2D,
-  ball: Ball,
-  r: number,
-) {
-  if (ball.depth < 0.45) return;
-  ctx.save();
-  ctx.translate(ball.x, ball.y + r * 0.72);
-  ctx.scale(1, 0.38);
-  ctx.beginPath();
-  ctx.arc(0, 0, r * 0.72, 0, Math.PI * 2);
-  ctx.fillStyle = C.contactShadow;
-  ctx.globalAlpha = (ball.depth - 0.45) * 0.55;
-  ctx.fill();
-  ctx.restore();
-}
-
 function drawBall(ctx: CanvasRenderingContext2D, ball: Ball) {
   const depth = effectiveDepth(ball);
   const scale = depthScale(depth);
@@ -82,85 +54,29 @@ function drawBall(ctx: CanvasRenderingContext2D, ball: Ball) {
   const alpha =
     ball.phase === "falling"
       ? fallingAlpha(ball)
-      : isOverlayBall(ball)
-        ? Math.max(0.92, V.alphaMin + depth * (V.alphaMax - V.alphaMin))
-        : V.alphaMin + depth * (V.alphaMax - V.alphaMin);
+      : V.alphaMin + depth * (V.alphaMax - V.alphaMin);
   const light = isLightFill(ball.fill);
-  const gloss = light ? 0.55 : 0.88;
-
-  drawContactShadow(ctx, ball, r);
 
   ctx.save();
   ctx.translate(ball.x, ball.y);
   ctx.globalAlpha = alpha;
 
-  // Ambient occlusion — dark rim on underside
-  const ao = ctx.createRadialGradient(0, r * 0.35, r * 0.1, 0, 0, r);
-  ao.addColorStop(0, "rgba(0,0,0,0)");
-  ao.addColorStop(0.72, "rgba(0,0,0,0)");
-  ao.addColorStop(1, `rgba(0,0,0,${light ? 0.14 : 0.28})`);
   ctx.beginPath();
   ctx.arc(0, 0, r, 0, Math.PI * 2);
-  ctx.fillStyle = ao;
+  ctx.fillStyle = ball.fill;
   ctx.fill();
 
-  // Base albedo + form shading
-  const body = ctx.createRadialGradient(
-    -r * 0.34,
-    -r * 0.38,
-    r * 0.04,
-    r * 0.06,
-    r * 0.14,
-    r * 1.05,
-  );
-  body.addColorStop(0, shadeHex(ball.fill, light ? 22 : 48));
-  body.addColorStop(0.38, ball.fill);
-  body.addColorStop(0.78, shadeHex(ball.fill, light ? -18 : -32));
-  body.addColorStop(1, shadeHex(ball.fill, light ? -38 : -55));
-  ctx.beginPath();
-  ctx.arc(0, 0, r, 0, Math.PI * 2);
-  ctx.fillStyle = body;
-  ctx.fill();
-
-  // Primary specular (key light upper-left)
-  const spec = ctx.createRadialGradient(
-    -r * 0.42,
-    -r * 0.48,
-    0,
-    -r * 0.42,
-    -r * 0.48,
-    r * 0.55 * gloss,
-  );
-  spec.addColorStop(0, `rgba(255,255,255,${0.55 * gloss})`);
-  spec.addColorStop(0.35, `rgba(255,255,255,${0.18 * gloss})`);
-  spec.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.beginPath();
-  ctx.arc(0, 0, r, 0, Math.PI * 2);
-  ctx.fillStyle = spec;
-  ctx.fill();
-
-  // Secondary catch light lower-right
-  const catchL = ctx.createRadialGradient(
-    r * 0.38,
-    r * 0.28,
-    0,
-    r * 0.38,
-    r * 0.28,
-    r * 0.35,
-  );
-  catchL.addColorStop(0, `rgba(255,255,255,${0.12 * gloss})`);
-  catchL.addColorStop(1, "rgba(255,255,255,0)");
-  ctx.beginPath();
-  ctx.arc(0, 0, r, 0, Math.PI * 2);
-  ctx.fillStyle = catchL;
-  ctx.fill();
-
-  // Micro edge definition
-  ctx.strokeStyle = `rgba(0,0,0,${0.08 + ball.depth * 0.18})`;
-  ctx.lineWidth = 0.45 + ball.depth * 0.25;
+  ctx.strokeStyle = light ? C.numberDark : C.numberLight;
+  ctx.lineWidth = 0.65 + ball.depth * 0.2;
   ctx.stroke();
 
-  // Embossed number
+  if (!light) {
+    ctx.beginPath();
+    ctx.arc(-r * 0.28, -r * 0.32, r * 0.22, 0, Math.PI * 2);
+    ctx.fillStyle = C.numberLight;
+    ctx.fill();
+  }
+
   if (shouldDrawNumber(ball)) {
     const boost =
       depth > V.numberCutoff
@@ -171,13 +87,8 @@ function drawBall(ctx: CanvasRenderingContext2D, ball: Ball) {
     ctx.font = `600 ${fontSize}px var(--font-mono), monospace`;
     ctx.textAlign = "center";
     ctx.textBaseline = "middle";
-
-    ctx.fillStyle = light ? "rgba(0,0,0,0.12)" : "rgba(255,255,255,0.08)";
-    ctx.globalAlpha = alpha * (0.25 + boost * 0.35);
-    ctx.fillText(num, 0.35, 0.65);
-
     ctx.fillStyle = light ? C.numberDark : C.numberLight;
-    ctx.globalAlpha = alpha * (0.42 + boost * 0.58);
+    ctx.globalAlpha = alpha * (0.55 + boost * 0.45);
     ctx.fillText(num, 0, 0.3);
   }
 
@@ -204,77 +115,23 @@ function drawBallClipped(ctx: CanvasRenderingContext2D, ball: Ball) {
   ctx.restore();
 }
 
-/** Glass shell — visible rim & highlights only; interior stays fully clear. */
+/** Glass shell — black outline only. */
 function drawGlassShell(ctx: CanvasRenderingContext2D) {
   const drum = getDrumGeometry();
   const { cx, cy, radius } = drum;
 
   ctx.save();
-
-  // Fresnel brightening confined to the rim band — never fills the interior
-  const rimBand = 7;
-  ctx.beginPath();
-  ctx.arc(cx, cy, radius, 0, Math.PI * 2);
-  ctx.arc(cx, cy, radius - rimBand, 0, Math.PI * 2, true);
-  const fresnel = ctx.createRadialGradient(
-    cx,
-    cy,
-    radius - rimBand,
-    cx,
-    cy,
-    radius,
-  );
-  fresnel.addColorStop(0, "rgba(255,255,255,0.04)");
-  fresnel.addColorStop(0.55, C.glassFresnel);
-  fresnel.addColorStop(1, "rgba(255,255,255,0.28)");
-  ctx.fillStyle = fresnel;
-  ctx.fill("evenodd");
-
-  // Inner glass wall — thin bright inner edge (stroke only)
   ctx.beginPath();
   ctx.arc(cx, cy, radius - 3.2, 0, Math.PI * 2);
   ctx.strokeStyle = C.glassInner;
   ctx.lineWidth = 0.9;
-  ctx.globalAlpha = 0.62;
   ctx.stroke();
 
-  // Outer rim — clearly visible boundary
-  ctx.globalAlpha = 1;
   ctx.beginPath();
   ctx.arc(cx, cy, radius, 0, Math.PI * 2);
   ctx.strokeStyle = C.glassOuter;
   ctx.lineWidth = 1.65;
   ctx.stroke();
-
-  // Primary studio highlight — upper-left arc
-  ctx.beginPath();
-  ctx.arc(
-    cx - radius * 0.36,
-    cy - radius * 0.5,
-    radius * 0.13,
-    0,
-    Math.PI * 2,
-  );
-  ctx.strokeStyle = C.glassHighlight;
-  ctx.lineWidth = 2.1;
-  ctx.globalAlpha = 0.78;
-  ctx.stroke();
-
-  // Secondary sheen — mid-right
-  ctx.beginPath();
-  ctx.arc(
-    cx + radius * 0.44,
-    cy - radius * 0.08,
-    radius * 0.055,
-    0,
-    Math.PI * 2,
-  );
-  ctx.strokeStyle = C.glassHighlight2;
-  ctx.lineWidth = 1.1;
-  ctx.globalAlpha = 0.5;
-  ctx.stroke();
-
-  ctx.globalAlpha = 1;
   ctx.restore();
 }
 
