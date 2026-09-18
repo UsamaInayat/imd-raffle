@@ -70,13 +70,6 @@ function drawBall(ctx: CanvasRenderingContext2D, ball: Ball) {
   ctx.lineWidth = 0.65 + ball.depth * 0.2;
   ctx.stroke();
 
-  if (!light) {
-    ctx.beginPath();
-    ctx.arc(-r * 0.28, -r * 0.32, r * 0.22, 0, Math.PI * 2);
-    ctx.fillStyle = C.numberLight;
-    ctx.fill();
-  }
-
   if (shouldDrawNumber(ball)) {
     const boost =
       depth > V.numberCutoff
