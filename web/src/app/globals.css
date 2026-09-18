@@ -294,7 +294,7 @@ a {
 .imd-bowl-jar {
   display: flex;
   width: 100%;
-  max-width: min(560px, 92vw);
+  max-width: min(680px, 92vw);
   margin-inline: auto;
   justify-content: center;
   padding: 8px 16px 24px;
@@ -304,8 +304,10 @@ a {
   display: block;
   width: 100%;
   height: auto;
-  aspect-ratio: 480 / 580;
-  max-height: min(68vh, 620px);
+  aspect-ratio: 520 / 600;
+  max-height: min(72vh, 680px);
+  cursor: pointer;
+  touch-action: manipulation;
 }
 
 @media (prefers-reduced-motion: reduce) {
